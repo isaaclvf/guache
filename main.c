@@ -2,13 +2,18 @@
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <stdlib.h>
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define MAX_VERTICES 10
 
 int windowWidth = 800;
 int windowHeight = 600;
+
+char saveFile[256] = ""; // Nome do arquivo para salvar
+int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
 
 typedef struct {
   float x, y;
@@ -75,6 +80,11 @@ void addPoint(float x, float y, float red, float green, float blue,
   pointList.head = newNode;
 }
 
+void addPointNode(PointNode *newNode) {
+  newNode->next = pointList.head;
+  pointList.head = newNode;
+}
+
 void addLine(float x0, float y0, float x1, float y1, float red, float green,
              float blue) {
   LineNode *newNode = (LineNode *)malloc(sizeof(LineNode));
@@ -87,6 +97,11 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   newNode->line.color[1] = green;
   newNode->line.color[2] = blue;
 
+  newNode->next = lineList.head;
+  lineList.head = newNode;
+}
+
+void addLineNode(LineNode *newNode) {
   newNode->next = lineList.head;
   lineList.head = newNode;
 }
@@ -110,6 +125,11 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   newNode->polygon.color[1] = green;
   newNode->polygon.color[2] = blue;
 
+  newNode->next = polygonList.head;
+  polygonList.head = newNode;
+}
+
+void addPolygonNode(PolygonNode *newNode) {
   newNode->next = polygonList.head;
   polygonList.head = newNode;
 }
@@ -138,7 +158,8 @@ void renderAllLines() {
 
   glBegin(GL_LINES);
   while (current != NULL) {
-    glColor3f(current->line.color[0], current->line.color[1], current->line.color[2]);
+    glColor3f(current->line.color[0], current->line.color[1],
+              current->line.color[2]);
 
     glVertex2f(current->line.x0, current->line.y0);
     glVertex2f(current->line.x1, current->line.y1);
@@ -152,12 +173,14 @@ void renderAllPolygons() {
   PolygonNode *current = polygonList.head;
 
   while (current != NULL) {
-    glColor3f(current->polygon.color[0], current->polygon.color[1], current->polygon.color[2]);
+    glColor3f(current->polygon.color[0], current->polygon.color[1],
+              current->polygon.color[2]);
 
     glBegin(GL_POLYGON);
 
     for (int i = 0; i < current->polygon.vertexCount; i++) {
-      glVertex2f(current->polygon.vertices[i][0], current->polygon.vertices[i][1]);
+      glVertex2f(current->polygon.vertices[i][0],
+                 current->polygon.vertices[i][1]);
     }
 
     glEnd();
@@ -259,13 +282,140 @@ void onMouseClick(int button, int state, int x, int y) {
     // Converte coordenadas da janela para coordenadas do OpenGL
     float worldX = (float)x;
     float worldY = (float)(windowHeight - y); // Flip Y-coordinate
-    addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 15.0f);
+    addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
     // Redesenhar a janela
     glutPostRedisplay();
   }
 }
 
+void saveToFile(const char *filename);
+
+void keyPress(unsigned char key, int x, int y) {
+  if (key == 's' && shouldSave) {
+    if (strlen(saveFile) > 0) {
+      saveToFile(saveFile);
+      printf("Salvo em %s\n", saveFile);
+    } else {
+      printf("Nenhum arquivo especificado. Use --save para especificar um "
+             "arquivo.\n");
+    }
+  }
+}
+
+void saveToFile(const char *filename) {
+  FILE *file = fopen(filename, "w");
+  if (file == NULL) {
+    printf("Erro: Não foi possível abrir o arquivo para salvar.\n");
+    return;
+  }
+
+  PointNode *currentPoint = pointList.head;
+  while (currentPoint != NULL) {
+    fprintf(file, "point %f %f %f %f %f %f\n", currentPoint->point.x,
+            currentPoint->point.y, currentPoint->point.color[0],
+            currentPoint->point.color[1], currentPoint->point.color[2],
+            currentPoint->point.size);
+
+    currentPoint = currentPoint->next;
+  }
+
+  LineNode *currentLine = lineList.head;
+  while (currentLine != NULL) {
+    fprintf(file, "line %f %f %f %f %f %f %f\n", currentLine->line.x0,
+            currentLine->line.y0, currentLine->line.x1, currentLine->line.y1,
+            currentLine->line.color[0], currentLine->line.color[1],
+            currentLine->line.color[2]);
+
+    currentLine = currentLine->next;
+  }
+
+  PolygonNode *currentPolygon = polygonList.head;
+  while (currentPolygon != NULL) {
+    fprintf(file, "polygon %f %f %f %d", currentPolygon->polygon.color[0],
+            currentPolygon->polygon.color[1], currentPolygon->polygon.color[2],
+            currentPolygon->polygon.vertexCount);
+
+    for (int i = 0; i < currentPolygon->polygon.vertexCount; i++) {
+      fprintf(file, " %f %f", currentPolygon->polygon.vertices[i][0],
+              currentPolygon->polygon.vertices[i][1]);
+    }
+
+    fprintf(file, "\n");
+
+    currentPolygon = currentPolygon->next;
+  }
+
+  fclose(file);
+  printf("Projeto salvo com sucesso.\n");
+}
+
+void loadFromFile(const char *filename) {
+  FILE *file = fopen(filename, "r");
+  if (!file) {
+    printf("Erro: Não foi possível carregar o arquivo %s.\n", filename);
+    return;
+  }
+
+  char line[256];
+  while (fgets(line, sizeof(line), file)) {
+    if (strncmp(line, "point", 5) == 0) {
+      PointNode *newPointNode = (PointNode *)malloc(sizeof(PointNode));
+      sscanf(line, "point %f %f %f %f %f %f", &newPointNode->point.x,
+             &newPointNode->point.y, &newPointNode->point.color[0],
+             &newPointNode->point.color[1], &newPointNode->point.color[2],
+             &newPointNode->point.size);
+      addPointNode(newPointNode);
+    } else if (strncmp(line, "line", 4) == 0) {
+      LineNode *newLineNode = (LineNode *)malloc(sizeof(LineNode));
+      sscanf(line, "line %f %f %f %f %f %f %f", &newLineNode->line.x0,
+             &newLineNode->line.y0, &newLineNode->line.x1,
+             &newLineNode->line.y1, &newLineNode->line.color[0],
+             &newLineNode->line.color[1], &newLineNode->line.color[2]);
+      addLineNode(newLineNode);
+    } else if (strncmp(line, "polygon", 7) == 0) {
+      PolygonNode *newPolygonNode = (PolygonNode *)malloc(sizeof(PolygonNode));
+      int vertexCount;
+      int offset = 0; // Número de caracters lido
+      sscanf(line, "polygon %f %f %f %d%n", &newPolygonNode->polygon.color[0],
+             &newPolygonNode->polygon.color[1],
+             &newPolygonNode->polygon.color[2], &vertexCount, &offset);
+      newPolygonNode->polygon.vertexCount = vertexCount;
+
+      // Ler coordenadas de vértices
+      char *vertexData =
+          line + offset; // Pula a parte inicial para pegar os vértices
+
+      for (int i = 0; i < vertexCount; i++) {
+        sscanf(vertexData, "%f %f", &newPolygonNode->polygon.vertices[i][0],
+               &newPolygonNode->polygon.vertices[i][1]);
+
+        // strchr retorna a primeira ocorrência de um ' ' depois de vertexData
+        vertexData = strchr(vertexData, ' ') + 1; // Move para o próximo vértice
+        vertexData = strchr(vertexData, ' ') + 1;
+      }
+      addPolygonNode(newPolygonNode);
+    }
+  }
+
+  fclose(file);
+}
+
 int main(int argc, char *argv[]) {
+  if (argc > 1) {
+    if (strcmp(argv[1], "--save") == 0 && argc == 3) {
+      strncpy(saveFile, argv[2], sizeof(saveFile));
+      saveFile[sizeof(saveFile) - 1] = '\0';
+      shouldSave = 1;
+    } else if (strcmp(argv[1], "--load") == 0 && argc == 3) {
+      loadFromFile(argv[2]);
+    } else {
+      printf("Uso:\n");
+      printf("  %s --save filename.txt  (para salvar objetos)\n", argv[0]);
+      printf("  %s --load filename.txt  (para carregar objetos)\n", argv[0]);
+      return 1;
+    }
+  }
+
   glutInit(&argc, argv);
   // Mudar para GLUT_DOUBLE depois
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_MULTISAMPLE);
@@ -281,6 +431,7 @@ int main(int argc, char *argv[]) {
 
   init();
   glutDisplayFunc(display);
+  glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutMainLoop();
 
