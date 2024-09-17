@@ -22,8 +22,6 @@ typedef struct PointList {
   PointNode *head;
 } PointList;
 
-GLfloat maxPointSize;
-
 PointList pointList;
 
 void addPoint(float x, float y, float red, float green, float blue,
@@ -77,9 +75,6 @@ void init() {
 
   glMatrixMode(GL_PROJECTION);
   gluOrtho2D(0.0f, windowWidth, 0.0f, windowHeight);
-
-  // Query the maximum point size allowed by the system
-  glGetFloatv(GL_POINT_SIZE_MAX, &maxPointSize);
 }
 
 void display() {
