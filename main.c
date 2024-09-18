@@ -45,16 +45,19 @@ typedef struct {
 typedef struct PointNode {
   Point point;
   struct PointNode *next;
+  struct PointNode *prev;
 } PointNode;
 
 typedef struct LineNode {
   Line line;
   struct LineNode *next;
+  struct LineNode *prev;
 } LineNode;
 
 typedef struct PolygonNode {
   Polygon polygon;
   struct PolygonNode *next;
+  struct PolygonNode *prev;
 } PolygonNode;
 
 typedef struct PointList {
@@ -84,12 +87,24 @@ void addPoint(float x, float y, float red, float green, float blue,
   newNode->point.color[2] = blue;
   newNode->point.size = size;
 
-  newNode->next = pointList.head;
+  PointNode *oldHead = pointList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   pointList.head = newNode;
 }
 
 void addPointNode(PointNode *newNode) {
-  newNode->next = pointList.head;
+  PointNode *oldHead = pointList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   pointList.head = newNode;
 }
 
@@ -105,12 +120,24 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   newNode->line.color[1] = green;
   newNode->line.color[2] = blue;
 
-  newNode->next = lineList.head;
+  LineNode *oldHead = lineList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   lineList.head = newNode;
 }
 
 void addLineNode(LineNode *newNode) {
-  newNode->next = lineList.head;
+  LineNode *oldHead = lineList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   lineList.head = newNode;
 }
 
@@ -133,12 +160,24 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   newNode->polygon.color[1] = green;
   newNode->polygon.color[2] = blue;
 
-  newNode->next = polygonList.head;
+  PolygonNode *oldHead = polygonList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   polygonList.head = newNode;
 }
 
 void addPolygonNode(PolygonNode *newNode) {
-  newNode->next = polygonList.head;
+  PolygonNode *oldHead = polygonList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
   polygonList.head = newNode;
 }
 
