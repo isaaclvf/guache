@@ -2,7 +2,6 @@
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +13,9 @@ int windowHeight = 600;
 
 char saveFile[256] = ""; // Nome do arquivo para salvar
 int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
+
+typedef enum { DRAW_POINT, DRAW_LINE, DRAW_POLYGON, SELECT } Mode;
+Mode currentMode = DRAW_POINT;
 
 typedef struct {
   float x, y;
@@ -27,6 +29,12 @@ typedef struct {
   float color[3]; // RGB
   // float thickness;
 } Line;
+
+// Usado na criação de uma linha
+float tempLineX0, tempLineY0;
+float currentMouseX, currentMouseY;
+int isDrawingLine =
+    0; // Flag para marcar se estamos no processo de desenhar uma linha
 
 typedef struct {
   int vertexCount;
@@ -230,6 +238,15 @@ void display() {
   renderAllLines();
   renderAllPolygons();
 
+  // Se estiver no processo de desenhar uma linha, mostrar um preview
+  if (isDrawingLine) {
+    glColor3f(0.5f, 0.5f, 0.5f);
+    glBegin(GL_LINES);
+    glVertex2f(tempLineX0, tempLineY0);
+    glVertex2f(currentMouseX, currentMouseY);
+    glEnd();
+  }
+
   glFlush();
   // glutSwapBuffers();
 }
@@ -281,10 +298,33 @@ void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
     float worldX = (float)x;
-    float worldY = (float)(windowHeight - y); // Flip Y-coordinate
-    addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
+    float worldY = (windowHeight - y); // y começa do outro lado
+
+    if (currentMode == DRAW_POINT) {
+      addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
+    } else if (currentMode == DRAW_LINE) {
+      if (!isDrawingLine) {
+        tempLineX0 = worldX;
+        tempLineY0 = worldY;
+        currentMouseX = worldX;
+        currentMouseY = worldY;
+        isDrawingLine = 1;
+      } else {
+        // Se chegou aqui está no segundo clique do desenho de linha
+        addLine(tempLineX0, tempLineY0, worldX, worldY, 1.0f, 0.0f, 0.0f);
+        isDrawingLine = 0;
+      }
+    }
     // Redesenhar a janela
     glutPostRedisplay();
+  }
+}
+
+void mouseMoveCallback(int x, int y) {
+  if (isDrawingLine) {
+    currentMouseX = (float)x;
+    currentMouseY = (float)(windowHeight - y); // y começa do outro lado
+    glutPostRedisplay(); // Redesenha a cena para preview da linha
   }
 }
 
@@ -299,6 +339,12 @@ void keyPress(unsigned char key, int x, int y) {
       printf("Nenhum arquivo especificado. Use --save para especificar um "
              "arquivo.\n");
     }
+  } else if (key == '1') {
+    currentMode = DRAW_POINT;
+    printf("Modo de desenho de ponto selecionado.\n");
+  } else if (key == '2') {
+    currentMode = DRAW_LINE;
+    printf("Modo de desenho de linha selecionado.\n");
   }
 }
 
@@ -433,6 +479,7 @@ int main(int argc, char *argv[]) {
   glutDisplayFunc(display);
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
+  glutPassiveMotionFunc(mouseMoveCallback);
   glutMainLoop();
 
   return EXIT_SUCCESS;
