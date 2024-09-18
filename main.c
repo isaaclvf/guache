@@ -251,49 +251,6 @@ void display() {
   // glutSwapBuffers();
 }
 
-// Demo de como usar antialiasing
-void displayStickman() {
-  // Ativar antialiasing para linhas
-  glEnable(GL_LINE_SMOOTH);
-  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glColor3f(1.0, 0.0, 0.0);
-
-  glBegin(GL_LINES);
-  glVertex2i(100, 100);
-  glVertex2i(100, 40);
-
-  glVertex2i(100, 40);
-  glVertex2i(120, 10);
-
-  glVertex2i(100, 40);
-  glVertex2i(80, 10);
-
-  glVertex2i(100, 90);
-  glVertex2i(120, 60);
-
-  glVertex2i(100, 90);
-  glVertex2i(80, 60);
-  glEnd();
-
-  glBegin(GL_POLYGON);
-  glVertex2i(90, 120);
-  glVertex2i(110, 120);
-  glVertex2i(110, 100);
-  glVertex2i(90, 100);
-  glEnd();
-
-  glFlush();
-
-  // Desabilitar antialiasing depois que terminar de renderizar
-  glDisable(GL_BLEND);
-  glDisable(GL_LINE_SMOOTH);
-}
-
 void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
