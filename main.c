@@ -2,6 +2,7 @@
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,17 +31,23 @@ typedef struct {
   // float thickness;
 } Line;
 
-// Usado na criação de uma linha
-float tempLineX0, tempLineY0;
-float currentMouseX, currentMouseY;
-int isDrawingLine =
-    0; // Flag para marcar se estamos no processo de desenhar uma linha
-
 typedef struct {
   int vertexCount;
   float vertices[MAX_VERTICES][2]; // Coordenadas dos vertices
   float color[3];                  // RGB
 } Polygon;
+
+// Usado na criação de objetos
+float tempLineX0, tempLineY0;
+float currentMouseX, currentMouseY;
+Polygon tempPolygon = {
+    .color = {0.0f, 0.0f, 1.0f},
+    .vertexCount = 0,
+};
+
+// Flags para marcar se estamos no processo de desenhar
+int isDrawingLine = 0;
+int isDrawingPolygon = 0;
 
 typedef struct PointNode {
   Point point;
@@ -278,6 +285,15 @@ void renderAllPolygons() {
     glEnd();
     current = current->next;
   }
+
+  if (isDrawingPolygon && tempPolygon.vertexCount > 0) {
+    glColor3f(tempPolygon.color[0], tempPolygon.color[1], tempPolygon.color[2]);
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < tempPolygon.vertexCount; i++) {
+      glVertex2f(tempPolygon.vertices[i][0], tempPolygon.vertices[i][1]);
+    }
+    glEnd();
+  }
 }
 
 void freePointList() {
@@ -335,6 +351,16 @@ void display() {
   // glutSwapBuffers();
 }
 
+// Usado para fechar o polígono
+float tolerance = 10.0f;
+int isCloseToFirstPoint(float x, float y) {
+  if (tempPolygon.vertexCount == 0)
+    return 0; // Nenhum vértice ainda
+  float dx = x - tempPolygon.vertices[0][0];
+  float dy = y - tempPolygon.vertices[0][1];
+  return sqrt(dx * dx + dy * dy) < tolerance;
+}
+
 void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
@@ -352,8 +378,27 @@ void onMouseClick(int button, int state, int x, int y) {
         isDrawingLine = 1;
       } else {
         // Se chegou aqui está no segundo clique do desenho de linha
-        addLine(tempLineX0, tempLineY0, worldX, worldY, 1.0f, 0.0f, 0.0f);
+        addLine(tempLineX0, tempLineY0, worldX, worldY, 0.0f, 0.0f, 1.0f);
         isDrawingLine = 0;
+      }
+    } else if (currentMode == DRAW_POLYGON) {
+      if (!isDrawingPolygon) {
+        isDrawingPolygon = 1;
+        tempPolygon.vertexCount = 0;
+      }
+
+      if (tempPolygon.vertexCount < MAX_VERTICES) {
+        if (isCloseToFirstPoint(worldX, worldY) &&
+            tempPolygon.vertexCount > 2) {
+          addPolygon(tempPolygon.vertices, tempPolygon.vertexCount, 0.0f, 0.0f,
+                     1.0f);
+          isDrawingPolygon = 0;
+        } else {
+          // Adiciona vértice ao polígono
+          tempPolygon.vertices[tempPolygon.vertexCount][0] = worldX;
+          tempPolygon.vertices[tempPolygon.vertexCount][1] = worldY;
+          tempPolygon.vertexCount++;
+        }
       }
     }
     // Redesenhar a janela
@@ -382,10 +427,13 @@ void keyPress(unsigned char key, int x, int y) {
     }
   } else if (key == '1') {
     currentMode = DRAW_POINT;
-    printf("Modo de desenho de ponto selecionado.\n");
+    printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
   } else if (key == '2') {
     currentMode = DRAW_LINE;
-    printf("Modo de desenho de linha selecionado.\n");
+    printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
+  } else if (key == '3') {
+    currentMode = DRAW_POLYGON;
+    printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
   }
 }
 
