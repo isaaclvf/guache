@@ -181,6 +181,51 @@ void addPolygonNode(PolygonNode *newNode) {
   polygonList.head = newNode;
 }
 
+void removePointNode(PointNode *node) {
+  PointNode *prevNode = node->prev;
+  PointNode *nextNode = node->next;
+
+  if (prevNode) {
+    prevNode->next = node->next;
+  }
+
+  if (nextNode) {
+    nextNode->prev = node->prev;
+  }
+
+  free(node);
+}
+
+void removeLineNode(LineNode *node) {
+  LineNode *prevNode = node->prev;
+  LineNode *nextNode = node->next;
+
+  if (prevNode) {
+    prevNode->next = node->next;
+  }
+
+  if (nextNode) {
+    nextNode->prev = node->prev;
+  }
+
+  free(node);
+}
+
+void removePolygonNode(PolygonNode *node) {
+  PolygonNode *prevNode = node->prev;
+  PolygonNode *nextNode = node->next;
+
+  if (prevNode) {
+    prevNode->next = node->next;
+  }
+
+  if (nextNode) {
+    nextNode->prev = node->prev;
+  }
+
+  free(node);
+}
+
 void renderAllPoints() {
   PointNode *current = pointList.head;
 
