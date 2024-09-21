@@ -83,6 +83,37 @@ PointList pointList = {NULL};
 LineList lineList = {NULL};
 PolygonList polygonList = {NULL};
 
+PointNode* selectedPoint = {NULL};
+LineNode* selectedLine = {NULL};
+PolygonNode* selectedPolygon = {NULL};
+int isAnythingSelected = 0;
+
+void clearSelection() {
+  if (selectedPoint != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedPoint->point.color[i] = 0.0;
+    }
+  }
+
+  if (selectedLine != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedLine->line.color[i] = 0.0;
+    }
+  }
+
+  if (selectedPolygon != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedPolygon->polygon.color[i] = 0.0;
+    }
+  }
+  
+  isAnythingSelected = 0;
+  selectedPoint = NULL;
+  selectedLine = NULL;
+  selectedPolygon = NULL;
+}
+
+
 void addPoint(float x, float y, float red, float green, float blue,
               float size) {
   PointNode *newNode = (PointNode *)malloc(sizeof(PointNode));
@@ -215,6 +246,7 @@ void removeLineNode(LineNode *node) {
     nextNode->prev = node->prev;
   }
 
+  selectedPoint = NULL;
   free(node);
 }
 
@@ -323,6 +355,47 @@ void freePolygonList() {
   }
 }
 
+//selection algorithms
+
+PointNode* selectPoint(int sx, int sy) {
+  PointNode* current = pointList.head;
+  float tolerance = 5.0;
+
+  while (current != NULL) {
+    if ((current->point.x <= sx + tolerance) && (current->point.x >= sx - tolerance)
+    && (current->point.y <= sy + tolerance) && (current->point.y >= sy - tolerance)) {
+      current->point.color[0]=1.0;
+      current->point.color[1]=0.0;
+      current->point.color[2]=0.0;
+      isAnythingSelected = 1;
+      return current;
+    }
+    current = current->next;
+  }
+  return NULL;
+}
+
+  LineNode* selectLine(int sx, int sy) {
+    LineNode* current = lineList.head;
+    float tolerance = 5.0;
+
+    while (current != NULL) {
+      if (((current->line.x0 <= sx + tolerance) && (current->line.x0 >= sx - tolerance)
+      && (current->line.y0 <= sy + tolerance) && (current->line.y0 >= sy - tolerance)) ||
+      ((current->line.x1 <= sx + tolerance) && (current->line.x1 >= sx - tolerance)
+      && (current->line.y1 <= sy + tolerance) && (current->line.y1 >= sy - tolerance)))
+      {
+        current->line.color[0]=1.0;
+        current->line.color[1]=0.0;
+        current->line.color[2]=0.0;
+        isAnythingSelected = 1;
+        return current;
+      }
+      current = current->next;
+    }
+    return NULL;
+  }
+
 void init() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -400,6 +473,19 @@ void onMouseClick(int button, int state, int x, int y) {
           tempPolygon.vertexCount++;
         }
       }
+    } else if (currentMode == SELECT) {
+      if (isAnythingSelected != 0) {
+        clearSelection;
+      }
+
+      if (selectedPoint != NULL) {
+        clearSelection();
+      }  
+      selectedPoint = selectPoint(worldX, worldY);
+
+      if (isAnythingSelected == 0) {
+        selectLine(worldX, worldY);
+      } 
     }
     // Redesenhar a janela
     glutPostRedisplay();
@@ -426,15 +512,27 @@ void keyPress(unsigned char key, int x, int y) {
              "arquivo.\n");
     }
   } else if (key == '1') {
+    clearSelection();
     currentMode = DRAW_POINT;
     printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
   } else if (key == '2') {
+    clearSelection();
     currentMode = DRAW_LINE;
     printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
   } else if (key == '3') {
+    clearSelection();
     currentMode = DRAW_POLYGON;
     printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
+  } else if (key == '4') {
+    currentMode = SELECT;
+    printf("Modo de \e[1;32mseleção\e[0m ativo.\n");
+  } else if (key == 'd') {
+    if (selectedPoint != NULL) {
+     removePointNode(selectedPoint);
+     isAnythingSelected = 0;
+    }
   }
+  glutPostRedisplay(); // Redesenha a cena para preview da linha
 }
 
 void saveToFile(const char *filename) {
