@@ -1,575 +1,141 @@
-#include <GL/freeglut.h>
-#include <GL/freeglut_std.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <GL/glut.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define MAX_VERTICES 10
-
-int windowWidth = 800;
-int windowHeight = 600;
-
-char saveFile[256] = ""; // Nome do arquivo para salvar
-int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
-
-typedef enum { DRAW_POINT, DRAW_LINE, DRAW_POLYGON, SELECT } Mode;
-Mode currentMode = DRAW_POINT;
 
 typedef struct {
-  float x, y;
-  float color[3]; // RGB
-  float size;
-} Point;
+  float tx, ty;
+  float angle;
+  float scale;
+  float matrix[16];
+} Transformation;
 
 typedef struct {
-  float x0, y0;   // Start
-  float x1, y1;   // End
-  float color[3]; // RGB
-  // float thickness;
-} Line;
+  float ax, ay;
+  float bx, by;
+  float cx, cy;
+  Transformation transformation;
+} Triangle;
 
-typedef struct {
-  int vertexCount;
-  float vertices[MAX_VERTICES][2]; // Coordenadas dos vertices
-  float color[3];                  // RGB
-} Polygon;
+Triangle t;
 
-// Usado na criação de objetos
-float tempLineX0, tempLineY0;
-float currentMouseX, currentMouseY;
-Polygon tempPolygon = {
-    .color = {0.0f, 0.0f, 1.0f},
-    .vertexCount = 0,
-};
+void initTriangle() {
+  t.ax = -0.5f;
+  t.ay = -0.5f;
+  t.bx = 0.5f;
+  t.by = -0.5f;
+  t.cx = 0.0f;
+  t.cy = 0.5f;
 
-// Flags para marcar se estamos no processo de desenhar
-int isDrawingLine = 0;
-int isDrawingPolygon = 0;
-
-typedef struct PointNode {
-  Point point;
-  struct PointNode *next;
-  struct PointNode *prev;
-} PointNode;
-
-typedef struct LineNode {
-  Line line;
-  struct LineNode *next;
-  struct LineNode *prev;
-} LineNode;
-
-typedef struct PolygonNode {
-  Polygon polygon;
-  struct PolygonNode *next;
-  struct PolygonNode *prev;
-} PolygonNode;
-
-typedef struct PointList {
-  PointNode *head;
-} PointList;
-
-typedef struct LineList {
-  LineNode *head;
-} LineList;
-
-typedef struct PolygonList {
-  PolygonNode *head;
-} PolygonList;
-
-PointList pointList = {NULL};
-LineList lineList = {NULL};
-PolygonList polygonList = {NULL};
-
-void addPoint(float x, float y, float red, float green, float blue,
-              float size) {
-  PointNode *newNode = (PointNode *)malloc(sizeof(PointNode));
-
-  newNode->point.x = x;
-  newNode->point.y = y;
-  newNode->point.color[0] = red;
-  newNode->point.color[1] = green;
-  newNode->point.color[2] = blue;
-  newNode->point.size = size;
-
-  PointNode *oldHead = pointList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  pointList.head = newNode;
+  t.transformation.angle = 0.0f;
+  t.transformation.scale = 1.0f;
+  t.transformation.tx = 0.0f;
+  t.transformation.ty = 0.0f;
 }
 
-void addPointNode(PointNode *newNode) {
-  PointNode *oldHead = pointList.head;
+void updateTransformationMatrix() {
+  glLoadIdentity();
 
-  if (oldHead) {
-    oldHead->prev = newNode;
+  glScalef(t.transformation.scale, t.transformation.scale, 0.0f);
+  glTranslatef(t.transformation.tx, t.transformation.ty, 0.0f);
+
+  float centerX = (t.ax + t.bx + t.cx) / 3.0f;
+  float centerY = (t.ay + t.by + t.cy) / 3.0f;
+
+  glTranslatef(-centerX, -centerY, 0.0f);
+  glRotatef(t.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(centerX, centerY, 0.0f);
+
+  // Save the updated transformation matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, t.transformation.matrix);
+
+  printf("Transformation Matrix (Angle: %.2f degrees)\n",
+         t.transformation.angle);
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      printf("%.2f ", t.transformation.matrix[i * 4 + j]);
+    }
+    printf("\n");
   }
-
-  newNode->next = oldHead;
-  pointList.head = newNode;
+  printf("\n");
 }
 
-void addLine(float x0, float y0, float x1, float y1, float red, float green,
-             float blue) {
-  LineNode *newNode = (LineNode *)malloc(sizeof(LineNode));
+void drawTriangle() {
+  glBegin(GL_TRIANGLES);
+  glColor3f(1.0f, 1.0f, 1.0f);
+  glVertex2f(t.ax, t.ay);
+  glVertex2f(t.bx, t.by);
+  glVertex2f(t.cx, t.cy);
+  glEnd();
 
-  newNode->line.x0 = x0;
-  newNode->line.y0 = y0;
-  newNode->line.x1 = x1;
-  newNode->line.y1 = y1;
-  newNode->line.color[0] = red;
-  newNode->line.color[1] = green;
-  newNode->line.color[2] = blue;
+  float centerX = (t.ax + t.bx + t.cx) / 3.0f;
+  float centerY = (t.ay + t.by + t.cy) / 3.0f;
 
-  LineNode *oldHead = lineList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  lineList.head = newNode;
-}
-
-void addLineNode(LineNode *newNode) {
-  LineNode *oldHead = lineList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  lineList.head = newNode;
-}
-
-void addPolygon(float vertices[][2], int vertexCount, float red, float green,
-                float blue) {
-  if (vertexCount < 3) {
-    printf("Erro: Um polígono precisa ter pelo menos 3 vertices.\n");
-    return;
-  }
-
-  PolygonNode *newNode = (PolygonNode *)malloc(sizeof(PolygonNode));
-
-  newNode->polygon.vertexCount = vertexCount;
-  for (int i = 0; i < vertexCount; i++) {
-    newNode->polygon.vertices[i][0] = vertices[i][0];
-    newNode->polygon.vertices[i][1] = vertices[i][1];
-  }
-
-  newNode->polygon.color[0] = red;
-  newNode->polygon.color[1] = green;
-  newNode->polygon.color[2] = blue;
-
-  PolygonNode *oldHead = polygonList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  polygonList.head = newNode;
-}
-
-void addPolygonNode(PolygonNode *newNode) {
-  PolygonNode *oldHead = polygonList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  polygonList.head = newNode;
-}
-
-void removePointNode(PointNode *node) {
-  PointNode *prevNode = node->prev;
-  PointNode *nextNode = node->next;
-
-  if (prevNode) {
-    prevNode->next = node->next;
-  }
-
-  if (nextNode) {
-    nextNode->prev = node->prev;
-  }
-
-  free(node);
-}
-
-void removeLineNode(LineNode *node) {
-  LineNode *prevNode = node->prev;
-  LineNode *nextNode = node->next;
-
-  if (prevNode) {
-    prevNode->next = node->next;
-  }
-
-  if (nextNode) {
-    nextNode->prev = node->prev;
-  }
-
-  free(node);
-}
-
-void removePolygonNode(PolygonNode *node) {
-  PolygonNode *prevNode = node->prev;
-  PolygonNode *nextNode = node->next;
-
-  if (prevNode) {
-    prevNode->next = node->next;
-  }
-
-  if (nextNode) {
-    nextNode->prev = node->prev;
-  }
-
-  free(node);
-}
-
-void renderAllPoints() {
-  PointNode *current = pointList.head;
-
-  // TODO: Encontrar uma forma de renderizar botões
-  // de tamanhos diferentes. Pelo visto, não dá pra usar
-  // glPointSize(current->point.size) dentro do glBegin.
-  glPointSize(5.0f);
-
+  glPointSize(10.0f);
   glBegin(GL_POINTS);
-  while (current != NULL) {
-    glColor3f(current->point.color[0], current->point.color[1],
-              current->point.color[2]);
-
-    glVertex2f(current->point.x, current->point.y);
-    current = current->next;
-  }
+  glColor3f(1.0f, 0.0f, 0.0f);
+  glVertex2f(centerX, centerY);
   glEnd();
-}
-
-void renderAllLines() {
-  LineNode *current = lineList.head;
-
-  glBegin(GL_LINES);
-  while (current != NULL) {
-    glColor3f(current->line.color[0], current->line.color[1],
-              current->line.color[2]);
-
-    glVertex2f(current->line.x0, current->line.y0);
-    glVertex2f(current->line.x1, current->line.y1);
-
-    current = current->next;
-  }
-  glEnd();
-}
-
-void renderAllPolygons() {
-  PolygonNode *current = polygonList.head;
-
-  while (current != NULL) {
-    glColor3f(current->polygon.color[0], current->polygon.color[1],
-              current->polygon.color[2]);
-
-    glBegin(GL_POLYGON);
-
-    for (int i = 0; i < current->polygon.vertexCount; i++) {
-      glVertex2f(current->polygon.vertices[i][0],
-                 current->polygon.vertices[i][1]);
-    }
-
-    glEnd();
-    current = current->next;
-  }
-
-  if (isDrawingPolygon && tempPolygon.vertexCount > 0) {
-    glColor3f(tempPolygon.color[0], tempPolygon.color[1], tempPolygon.color[2]);
-    glBegin(GL_LINE_LOOP);
-    for (int i = 0; i < tempPolygon.vertexCount; i++) {
-      glVertex2f(tempPolygon.vertices[i][0], tempPolygon.vertices[i][1]);
-    }
-    glEnd();
-  }
-}
-
-void freePointList() {
-  PointNode *current = pointList.head;
-  while (current != NULL) {
-    PointNode *next = current->next;
-    free(current);
-    current = next;
-  }
-}
-
-void freeLineList() {
-  LineNode *current = lineList.head;
-  while (current != NULL) {
-    LineNode *next = current->next;
-    free(current);
-    current = next;
-  }
-}
-
-void freePolygonList() {
-  PolygonNode *current = polygonList.head;
-  while (current != NULL) {
-    PolygonNode *next = current->next;
-    free(current);
-    current = next;
-  }
-}
-
-void init() {
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-  glMatrixMode(GL_PROJECTION);
-  gluOrtho2D(0.0f, windowWidth, 0.0f, windowHeight);
 }
 
 void display() {
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  renderAllPoints();
-  renderAllLines();
-  renderAllPolygons();
+  // Apply the updated transformation matrix
+  glLoadMatrixf(t.transformation.matrix);
 
-  // Se estiver no processo de desenhar uma linha, mostrar um preview
-  if (isDrawingLine) {
-    glColor3f(0.5f, 0.5f, 0.5f);
-    glBegin(GL_LINES);
-    glVertex2f(tempLineX0, tempLineY0);
-    glVertex2f(currentMouseX, currentMouseY);
-    glEnd();
-  }
+  drawTriangle();
 
   glFlush();
-  // glutSwapBuffers();
 }
 
-// Usado para fechar o polígono
-float tolerance = 10.0f;
-int isCloseToFirstPoint(float x, float y) {
-  if (tempPolygon.vertexCount == 0)
-    return 0; // Nenhum vértice ainda
-  float dx = x - tempPolygon.vertices[0][0];
-  float dy = y - tempPolygon.vertices[0][1];
-  return sqrt(dx * dx + dy * dy) < tolerance;
+void handleKeypress(unsigned char key, int x, int y) {
+  switch (key) {
+    case 'q':
+      t.transformation.angle += 5.0f;
+      break;
+    case 'e':
+      t.transformation.angle -= 5.0f;
+      break;
+    case 'w':
+      t.transformation.ty += 0.03f;
+      break;
+    case 's':
+      t.transformation.ty -= 0.03f;
+      break;
+    case 'a':
+      t.transformation.tx -= 0.03f;
+      break;
+    case 'd':
+      t.transformation.tx += 0.03f;
+      break;
+    case '+':
+      t.transformation.scale += 0.1f;
+      break;
+    case '-':
+      t.transformation.scale -= 0.1f;
+      break;
+  }
+
+  updateTransformationMatrix();
+
+  glutPostRedisplay();
 }
 
-void onMouseClick(int button, int state, int x, int y) {
-  if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-    // Converte coordenadas da janela para coordenadas do OpenGL
-    float worldX = (float)x;
-    float worldY = (windowHeight - y); // y começa do outro lado
-
-    if (currentMode == DRAW_POINT) {
-      addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
-    } else if (currentMode == DRAW_LINE) {
-      if (!isDrawingLine) {
-        tempLineX0 = worldX;
-        tempLineY0 = worldY;
-        currentMouseX = worldX;
-        currentMouseY = worldY;
-        isDrawingLine = 1;
-      } else {
-        // Se chegou aqui está no segundo clique do desenho de linha
-        addLine(tempLineX0, tempLineY0, worldX, worldY, 0.0f, 0.0f, 1.0f);
-        isDrawingLine = 0;
-      }
-    } else if (currentMode == DRAW_POLYGON) {
-      if (!isDrawingPolygon) {
-        isDrawingPolygon = 1;
-        tempPolygon.vertexCount = 0;
-      }
-
-      if (tempPolygon.vertexCount < MAX_VERTICES) {
-        if (isCloseToFirstPoint(worldX, worldY) &&
-            tempPolygon.vertexCount > 2) {
-          addPolygon(tempPolygon.vertices, tempPolygon.vertexCount, 0.0f, 0.0f,
-                     1.0f);
-          isDrawingPolygon = 0;
-        } else {
-          // Adiciona vértice ao polígono
-          tempPolygon.vertices[tempPolygon.vertexCount][0] = worldX;
-          tempPolygon.vertices[tempPolygon.vertexCount][1] = worldY;
-          tempPolygon.vertexCount++;
-        }
-      }
-    }
-    // Redesenhar a janela
-    glutPostRedisplay();
-  }
-}
-
-void mouseMoveCallback(int x, int y) {
-  if (isDrawingLine) {
-    currentMouseX = (float)x;
-    currentMouseY = (float)(windowHeight - y); // y começa do outro lado
-    glutPostRedisplay(); // Redesenha a cena para preview da linha
-  }
-}
-
-void saveToFile(const char *filename);
-
-void keyPress(unsigned char key, int x, int y) {
-  if (key == 's' && shouldSave) {
-    if (strlen(saveFile) > 0) {
-      saveToFile(saveFile);
-      printf("Salvo em %s\n", saveFile);
-    } else {
-      printf("Nenhum arquivo especificado. Use --save para especificar um "
-             "arquivo.\n");
-    }
-  } else if (key == '1') {
-    currentMode = DRAW_POINT;
-    printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
-  } else if (key == '2') {
-    currentMode = DRAW_LINE;
-    printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
-  } else if (key == '3') {
-    currentMode = DRAW_POLYGON;
-    printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
-  }
-}
-
-void saveToFile(const char *filename) {
-  FILE *file = fopen(filename, "w");
-  if (file == NULL) {
-    printf("Erro: Não foi possível abrir o arquivo para salvar.\n");
-    return;
-  }
-
-  PointNode *currentPoint = pointList.head;
-  while (currentPoint != NULL) {
-    fprintf(file, "point %f %f %f %f %f %f\n", currentPoint->point.x,
-            currentPoint->point.y, currentPoint->point.color[0],
-            currentPoint->point.color[1], currentPoint->point.color[2],
-            currentPoint->point.size);
-
-    currentPoint = currentPoint->next;
-  }
-
-  LineNode *currentLine = lineList.head;
-  while (currentLine != NULL) {
-    fprintf(file, "line %f %f %f %f %f %f %f\n", currentLine->line.x0,
-            currentLine->line.y0, currentLine->line.x1, currentLine->line.y1,
-            currentLine->line.color[0], currentLine->line.color[1],
-            currentLine->line.color[2]);
-
-    currentLine = currentLine->next;
-  }
-
-  PolygonNode *currentPolygon = polygonList.head;
-  while (currentPolygon != NULL) {
-    fprintf(file, "polygon %f %f %f %d", currentPolygon->polygon.color[0],
-            currentPolygon->polygon.color[1], currentPolygon->polygon.color[2],
-            currentPolygon->polygon.vertexCount);
-
-    for (int i = 0; i < currentPolygon->polygon.vertexCount; i++) {
-      fprintf(file, " %f %f", currentPolygon->polygon.vertices[i][0],
-              currentPolygon->polygon.vertices[i][1]);
-    }
-
-    fprintf(file, "\n");
-
-    currentPolygon = currentPolygon->next;
-  }
-
-  fclose(file);
-  printf("Projeto salvo com sucesso.\n");
-}
-
-void loadFromFile(const char *filename) {
-  FILE *file = fopen(filename, "r");
-  if (!file) {
-    printf("Erro: Não foi possível carregar o arquivo %s.\n", filename);
-    return;
-  }
-
-  char line[256];
-  while (fgets(line, sizeof(line), file)) {
-    if (strncmp(line, "point", 5) == 0) {
-      PointNode *newPointNode = (PointNode *)malloc(sizeof(PointNode));
-      sscanf(line, "point %f %f %f %f %f %f", &newPointNode->point.x,
-             &newPointNode->point.y, &newPointNode->point.color[0],
-             &newPointNode->point.color[1], &newPointNode->point.color[2],
-             &newPointNode->point.size);
-      addPointNode(newPointNode);
-    } else if (strncmp(line, "line", 4) == 0) {
-      LineNode *newLineNode = (LineNode *)malloc(sizeof(LineNode));
-      sscanf(line, "line %f %f %f %f %f %f %f", &newLineNode->line.x0,
-             &newLineNode->line.y0, &newLineNode->line.x1,
-             &newLineNode->line.y1, &newLineNode->line.color[0],
-             &newLineNode->line.color[1], &newLineNode->line.color[2]);
-      addLineNode(newLineNode);
-    } else if (strncmp(line, "polygon", 7) == 0) {
-      PolygonNode *newPolygonNode = (PolygonNode *)malloc(sizeof(PolygonNode));
-      int vertexCount;
-      int offset = 0; // Número de caracters lido
-      sscanf(line, "polygon %f %f %f %d%n", &newPolygonNode->polygon.color[0],
-             &newPolygonNode->polygon.color[1],
-             &newPolygonNode->polygon.color[2], &vertexCount, &offset);
-      newPolygonNode->polygon.vertexCount = vertexCount;
-
-      // Ler coordenadas de vértices
-      char *vertexData =
-          line + offset; // Pula a parte inicial para pegar os vértices
-
-      for (int i = 0; i < vertexCount; i++) {
-        sscanf(vertexData, "%f %f", &newPolygonNode->polygon.vertices[i][0],
-               &newPolygonNode->polygon.vertices[i][1]);
-
-        // strchr retorna a primeira ocorrência de um ' ' depois de vertexData
-        vertexData = strchr(vertexData, ' ') + 1; // Move para o próximo vértice
-        vertexData = strchr(vertexData, ' ') + 1;
-      }
-      addPolygonNode(newPolygonNode);
-    }
-  }
-
-  fclose(file);
-}
-
-int main(int argc, char *argv[]) {
-  if (argc > 1) {
-    if (strcmp(argv[1], "--save") == 0 && argc == 3) {
-      strncpy(saveFile, argv[2], sizeof(saveFile));
-      saveFile[sizeof(saveFile) - 1] = '\0';
-      shouldSave = 1;
-    } else if (strcmp(argv[1], "--load") == 0 && argc == 3) {
-      loadFromFile(argv[2]);
-    } else {
-      printf("Uso:\n");
-      printf("  %s --save filename.txt  (para salvar objetos)\n", argv[0]);
-      printf("  %s --load filename.txt  (para carregar objetos)\n", argv[0]);
-      return 1;
-    }
-  }
-
+int main(int argc, char** argv) {
   glutInit(&argc, argv);
-  // Mudar para GLUT_DOUBLE depois
-  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_MULTISAMPLE);
-  glutInitWindowSize(windowWidth, windowHeight);
-  glutInitWindowPosition(100, 100);
-  glutCreateWindow("Guache - 2D Painter");
-  // TODO: Ver glutReshapeFunc();
+  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+  glutInitWindowSize(500, 500);
+  glutCreateWindow("Triangle Rotation");
 
-  // Opções para antialiasing
-  // glEnable(GL_MULTISAMPLE);
-  // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  // glEnable(GL_LINE_SMOOTH);
+  glClearColor(0.0, 0.0, 0.0, 1.0);
 
-  init();
   glutDisplayFunc(display);
-  glutKeyboardFunc(keyPress);
-  glutMouseFunc(onMouseClick);
-  glutPassiveMotionFunc(mouseMoveCallback);
-  glutMainLoop();
+  glutKeyboardFunc(handleKeypress);
 
-  return EXIT_SUCCESS;
+  // Initialize the transformation matrix
+  initTriangle();
+  updateTransformationMatrix();
+
+  glutMainLoop();
+  return 0;
 }
