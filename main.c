@@ -19,6 +19,8 @@ int shouldSave = 0;  // Flag que indica se o programa vai salvar em um arquivo
 typedef enum { DRAW_POINT, DRAW_LINE, DRAW_POLYGON, SELECT } Mode;
 Mode currentMode = DRAW_POINT;
 
+float currentColor[] = {0.0f, 0.0f, 0.0f};
+
 typedef struct {
   float matrix[16];
   float tx, ty;
@@ -33,19 +35,25 @@ typedef struct {
   float x, y;
   float color[3];  // RGB
   float size;
+
+  Transformation transformation;
 } Point;
 
 typedef struct {
   float x0, y0;    // Start
   float x1, y1;    // End
   float color[3];  // RGB
-  // float thickness;
+  float width;
+
+  Transformation transformation;
 } Line;
 
 typedef struct {
   int vertexCount;
   float vertices[MAX_VERTICES][2];  // Coordenadas dos vertices
   float color[3];                   // RGB
+
+  Transformation transformation;
 } Polygon;
 
 // Usado na criação de objetos
@@ -136,6 +144,21 @@ void addPoint(float x, float y, float red, float green, float blue,
   newNode->point.size = size;
   newNode->prev = NULL;
 
+  newNode->point.transformation.tx = 0.0f;
+  newNode->point.transformation.ty = 0.0f;
+  newNode->point.transformation.angle = 0.0f;
+  newNode->point.transformation.scale = 1.0f;
+  newNode->point.transformation.shearX = 0.0f;
+  newNode->point.transformation.shearY = 0.0f;
+  newNode->point.transformation.reflectX = 0;
+  newNode->point.transformation.reflectY = 0;
+
+  glPushMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glGetFloatv(GL_MODELVIEW_MATRIX, newNode->point.transformation.matrix);
+  glPopMatrix();
+
   PointNode* oldHead = pointList.head;
 
   if (oldHead) {
@@ -169,6 +192,21 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   newNode->line.color[1] = green;
   newNode->line.color[2] = blue;
   newNode->prev = NULL;
+
+  newNode->line.transformation.tx = 0.0f;
+  newNode->line.transformation.ty = 0.0f;
+  newNode->line.transformation.angle = 0.0f;
+  newNode->line.transformation.scale = 1.0f;
+  newNode->line.transformation.shearX = 0.0f;
+  newNode->line.transformation.shearY = 0.0f;
+  newNode->line.transformation.reflectX = 0;
+  newNode->line.transformation.reflectY = 0;
+
+  glPushMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glGetFloatv(GL_MODELVIEW_MATRIX, newNode->line.transformation.matrix);
+  glPopMatrix();
 
   LineNode* oldHead = lineList.head;
 
@@ -211,6 +249,21 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   newNode->polygon.color[2] = blue;
   newNode->prev = NULL;
 
+  newNode->polygon.transformation.tx = 0.0f;
+  newNode->polygon.transformation.ty = 0.0f;
+  newNode->polygon.transformation.angle = 0.0f;
+  newNode->polygon.transformation.scale = 1.0f;
+  newNode->polygon.transformation.shearX = 0.0f;
+  newNode->polygon.transformation.shearY = 0.0f;
+  newNode->polygon.transformation.reflectX = 0;
+  newNode->polygon.transformation.reflectY = 0;
+
+  glPushMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glGetFloatv(GL_MODELVIEW_MATRIX, newNode->polygon.transformation.matrix);
+  glPopMatrix();
+
   PolygonNode* oldHead = polygonList.head;
 
   if (oldHead) {
@@ -230,6 +283,165 @@ void addPolygonNode(PolygonNode* newNode) {
 
   newNode->next = oldHead;
   polygonList.head = newNode;
+}
+
+void updatePointTransformationMatrix(PointNode* pointNode) {
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glScalef(pointNode->point.transformation.scale,
+           pointNode->point.transformation.scale, 0.0f);
+  glTranslatef(pointNode->point.transformation.tx,
+               pointNode->point.transformation.ty, 0.0f);
+
+  GLfloat shearMatrix[16] = {1.0f,
+                             pointNode->point.transformation.shearY,
+                             0.0f,
+                             0.0f,
+                             pointNode->point.transformation.shearX,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f};
+  glMultMatrixf(shearMatrix);
+
+  if (pointNode->point.transformation.reflectX) {
+    GLfloat reflectXMatrix[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectXMatrix);
+  }
+
+  if (pointNode->point.transformation.reflectY) {
+    GLfloat reflectYMatrix[16] = {-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                  0.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f,  0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectYMatrix);
+  }
+
+  glRotatef(pointNode->point.transformation.angle, 0.0, 0.0, 1.0);
+
+  // Save the updated transformation matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, pointNode->point.transformation.matrix);
+}
+
+void updateLineTransformationMatrix(LineNode* lineNode) {
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glScalef(lineNode->line.transformation.scale,
+           lineNode->line.transformation.scale, 0.0f);
+  glTranslatef(lineNode->line.transformation.tx,
+               lineNode->line.transformation.ty, 0.0f);
+
+  GLfloat shearMatrix[16] = {1.0f,
+                             lineNode->line.transformation.shearY,
+                             0.0f,
+                             0.0f,
+                             lineNode->line.transformation.shearX,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f};
+  glMultMatrixf(shearMatrix);
+
+  if (lineNode->line.transformation.reflectX) {
+    GLfloat reflectXMatrix[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectXMatrix);
+  }
+
+  if (lineNode->line.transformation.reflectY) {
+    GLfloat reflectYMatrix[16] = {-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                  0.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f,  0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectYMatrix);
+  }
+
+  float centerX = (lineNode->line.x0 + lineNode->line.x1) / 2.0f;
+  float centerY = (lineNode->line.y0 + lineNode->line.y1) / 2.0f;
+
+  glTranslatef(-centerX, -centerY, 0.0f);
+  glRotatef(lineNode->line.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(centerX, centerY, 0.0f);
+
+  // Save the updated transformation matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, lineNode->line.transformation.matrix);
+}
+
+void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glScalef(polygonNode->polygon.transformation.scale,
+           polygonNode->polygon.transformation.scale, 0.0f);
+  glTranslatef(polygonNode->polygon.transformation.tx,
+               polygonNode->polygon.transformation.ty, 0.0f);
+
+  GLfloat shearMatrix[16] = {1.0f,
+                             polygonNode->polygon.transformation.shearY,
+                             0.0f,
+                             0.0f,
+                             polygonNode->polygon.transformation.shearX,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f};
+  glMultMatrixf(shearMatrix);
+
+  if (polygonNode->polygon.transformation.reflectX) {
+    GLfloat reflectXMatrix[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectXMatrix);
+  }
+
+  if (polygonNode->polygon.transformation.reflectY) {
+    GLfloat reflectYMatrix[16] = {-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                  0.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f,  0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectYMatrix);
+  }
+
+  float centerX = 0.0f;
+  float centerY = 0.0f;
+
+  for (int i = 0; i < polygonNode->polygon.vertexCount; i++) {
+    centerX += polygonNode->polygon.vertices[i][0];
+    centerY += polygonNode->polygon.vertices[i][1];
+  }
+
+  centerX = centerX / polygonNode->polygon.vertexCount;
+  centerY = centerY / polygonNode->polygon.vertexCount;
+
+  glTranslatef(-centerX, -centerY, 0.0f);
+  glRotatef(polygonNode->polygon.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(centerX, centerY, 0.0f);
+
+  // Save the updated transformation matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, polygonNode->polygon.transformation.matrix);
 }
 
 void removePointNode(PointNode* node) {
@@ -281,36 +493,41 @@ void removePolygonNode(PolygonNode* node) {
 void renderAllPoints() {
   PointNode* current = pointList.head;
 
-  // TODO: Encontrar uma forma de renderizar botões
-  // de tamanhos diferentes. Pelo visto, não dá pra usar
-  // glPointSize(current->point.size) dentro do glBegin.
-  glPointSize(5.0f);
-
-  glBegin(GL_POINTS);
+  int i = 0;
   while (current != NULL) {
+    glPointSize(5.0f);
+    glLoadMatrixf(current->point.transformation.matrix);
+
+    glBegin(GL_POINTS);
+
     glColor3f(current->point.color[0], current->point.color[1],
               current->point.color[2]);
 
+    printf("Ponto %d - x: %.2f, y: %.2f\n", i++, current->point.x,
+           current->point.y);
     glVertex2f(current->point.x, current->point.y);
+    glEnd();
+
     current = current->next;
   }
-  glEnd();
 }
 
 void renderAllLines() {
   LineNode* current = lineList.head;
 
-  glBegin(GL_LINES);
   while (current != NULL) {
+    glLoadMatrixf(current->line.transformation.matrix);
+    glBegin(GL_LINES);
+
     glColor3f(current->line.color[0], current->line.color[1],
               current->line.color[2]);
 
     glVertex2f(current->line.x0, current->line.y0);
     glVertex2f(current->line.x1, current->line.y1);
 
+    glEnd();
     current = current->next;
   }
-  glEnd();
 }
 
 void renderAllPolygons() {
@@ -320,6 +537,7 @@ void renderAllPolygons() {
     glColor3f(current->polygon.color[0], current->polygon.color[1],
               current->polygon.color[2]);
 
+    glLoadMatrixf(current->polygon.transformation.matrix);
     glBegin(GL_POLYGON);
 
     for (int i = 0; i < current->polygon.vertexCount; i++) {
@@ -580,10 +798,11 @@ void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
     float worldX = (float)x;
-    float worldY = (windowHeight - y);  // y começa do outro lado
+    float worldY = (float)(windowHeight - y);  // y começa do outro lado
 
     if (currentMode == DRAW_POINT) {
-      addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
+      addPoint(worldX, worldY, currentColor[0], currentColor[1],
+               currentColor[2], 5.0f);
     } else if (currentMode == DRAW_LINE) {
       if (!isDrawingLine) {
         tempLineX0 = worldX;
@@ -593,7 +812,8 @@ void onMouseClick(int button, int state, int x, int y) {
         isDrawingLine = 1;
       } else {
         // Se chegou aqui está no segundo clique do desenho de linha
-        addLine(tempLineX0, tempLineY0, worldX, worldY, 0.0f, 0.0f, 0.0f);
+        addLine(tempLineX0, tempLineY0, worldX, worldY, currentColor[0],
+                currentColor[1], currentColor[2]);
         isDrawingLine = 0;
       }
     } else if (currentMode == DRAW_POLYGON) {
@@ -605,8 +825,8 @@ void onMouseClick(int button, int state, int x, int y) {
       if (tempPolygon.vertexCount < MAX_VERTICES) {
         if (isCloseToFirstPoint(worldX, worldY) &&
             tempPolygon.vertexCount > 2) {
-          addPolygon(tempPolygon.vertices, tempPolygon.vertexCount, 0.0f, 0.0f,
-                     0.0f);
+          addPolygon(tempPolygon.vertices, tempPolygon.vertexCount,
+                     currentColor[0], currentColor[1], currentColor[2]);
           isDrawingPolygon = 0;
         } else {
           // Adiciona vértice ao polígono
@@ -654,23 +874,28 @@ void keyPress(unsigned char key, int x, int y) {
           "Nenhum arquivo especificado. Use --save para especificar um "
           "arquivo.\n");
     }
-  } else if (key == '1') {
+
+  } else if (key == 'v') {
     clearSelection();
     currentMode = DRAW_POINT;
     printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
-  } else if (key == '2') {
+
+  } else if (key == 'b') {
     clearSelection();
     currentMode = DRAW_LINE;
     printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
-  } else if (key == '3') {
+
+  } else if (key == 'n') {
     clearSelection();
     currentMode = DRAW_POLYGON;
     printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
-  } else if (key == '4') {
+
+  } else if (key == 'm') {
     currentMode = SELECT;
     printf("Modo de \e[1;32mseleção\e[0m ativo.\n");
-  } else if (key == 'd') {
-    if (selectedPoint != NULL) {
+
+  } else if (key == '0') {
+    if (selectedPoint) {
       removePointNode(selectedPoint);
       isAnythingSelected = 0;
     }
@@ -685,6 +910,196 @@ void keyPress(unsigned char key, int x, int y) {
       isAnythingSelected = 0;
     }
   }
+
+  switch (key) {
+    case '1':
+      currentColor[0] = 0.0f;
+      currentColor[1] = 0.0f;
+      currentColor[2] = 0.0f;
+      break;
+    case '2':
+      currentColor[0] = 1.0f;
+      currentColor[1] = 0.0f;
+      currentColor[2] = 0.0f;
+      break;
+    case '3':
+      currentColor[0] = 0.0f;
+      currentColor[1] = 1.0f;
+      currentColor[2] = 0.0f;
+      break;
+    case '4':
+      currentColor[0] = 0.0f;
+      currentColor[1] = 0.0f;
+      currentColor[2] = 1.0f;
+      break;
+    case '5':
+      currentColor[0] = 1.0f;
+      currentColor[1] = 1.0f;
+      currentColor[2] = 0.0f;
+      break;
+    case '6':
+      currentColor[0] = 1.0f;
+      currentColor[1] = 0.0f;
+      currentColor[2] = 1.0f;
+      break;
+    case '7':
+      currentColor[0] = 0.0f;
+      currentColor[1] = 1.0f;
+      currentColor[2] = 1.0f;
+      break;
+  }
+
+  if (selectedPoint) {
+    switch (key) {
+      case 'q':
+        selectedPoint->point.transformation.angle += 5.0f;
+        break;
+      case 'e':
+        selectedPoint->point.transformation.angle -= 5.0f;
+        break;
+      case 'w':
+        selectedPoint->point.transformation.ty += 5.0f;
+        break;
+      case 's':
+        selectedPoint->point.transformation.ty -= 5.0f;
+        break;
+      case 'a':
+        selectedPoint->point.transformation.tx -= 5.0f;
+        break;
+      case 'd':
+        selectedPoint->point.transformation.tx += 5.0f;
+        break;
+      case '+':
+        selectedPoint->point.transformation.scale += 0.1f;
+        break;
+      case '-':
+        selectedPoint->point.transformation.scale -= 0.1f;
+        break;
+      case 'i':
+        selectedPoint->point.transformation.shearX += 0.05f;
+        break;
+      case 'k':
+        selectedPoint->point.transformation.shearX -= 0.05f;
+        break;
+      case 'j':
+        selectedPoint->point.transformation.shearY += 0.05f;
+        break;
+      case 'l':
+        selectedPoint->point.transformation.shearY -= 0.05f;
+        break;
+      case 'x':
+        selectedPoint->point.transformation.reflectX =
+            !selectedPoint->point.transformation.reflectX;
+        break;
+      case 'y':
+        selectedPoint->point.transformation.reflectY =
+            !selectedPoint->point.transformation.reflectY;
+        break;
+    }
+
+    updatePointTransformationMatrix(selectedPoint);
+  }
+
+  if (selectedLine) {
+    switch (key) {
+      case 'q':
+        selectedLine->line.transformation.angle += 5.0f;
+        break;
+      case 'e':
+        selectedLine->line.transformation.angle -= 5.0f;
+        break;
+      case 'w':
+        selectedLine->line.transformation.ty += 5.0f;
+        break;
+      case 's':
+        selectedLine->line.transformation.ty -= 5.0f;
+        break;
+      case 'a':
+        selectedLine->line.transformation.tx -= 5.0f;
+        break;
+      case 'd':
+        selectedLine->line.transformation.tx += 5.0f;
+        break;
+      case '+':
+        selectedLine->line.transformation.scale += 0.1f;
+        break;
+      case '-':
+        selectedLine->line.transformation.scale -= 0.1f;
+        break;
+      case 'i':
+        selectedLine->line.transformation.shearX += 0.05f;
+        break;
+      case 'k':
+        selectedLine->line.transformation.shearX -= 0.05f;
+        break;
+      case 'j':
+        selectedLine->line.transformation.shearY += 0.05f;
+        break;
+      case 'l':
+        selectedLine->line.transformation.shearY -= 0.05f;
+        break;
+      case 'x':
+        selectedLine->line.transformation.reflectX =
+            !selectedLine->line.transformation.reflectX;
+        break;
+      case 'y':
+        selectedLine->line.transformation.reflectY =
+            !selectedLine->line.transformation.reflectY;
+        break;
+    }
+    updateLineTransformationMatrix(selectedLine);
+  }
+
+  if (selectedPolygon) {
+    switch (key) {
+      case 'q':
+        selectedPolygon->polygon.transformation.angle += 5.0f;
+        break;
+      case 'e':
+        selectedPolygon->polygon.transformation.angle -= 5.0f;
+        break;
+      case 'w':
+        selectedPolygon->polygon.transformation.ty += 5.0f;
+        break;
+      case 's':
+        selectedPolygon->polygon.transformation.ty -= 5.0f;
+        break;
+      case 'a':
+        selectedPolygon->polygon.transformation.tx -= 5.0f;
+        break;
+      case 'd':
+        selectedPolygon->polygon.transformation.tx += 5.0f;
+        break;
+      case '+':
+        selectedPolygon->polygon.transformation.scale += 0.1f;
+        break;
+      case '-':
+        selectedPolygon->polygon.transformation.scale -= 0.1f;
+        break;
+      case 'i':
+        selectedPolygon->polygon.transformation.shearX += 0.05f;
+        break;
+      case 'k':
+        selectedPolygon->polygon.transformation.shearX -= 0.05f;
+        break;
+      case 'j':
+        selectedPolygon->polygon.transformation.shearY += 0.05f;
+        break;
+      case 'l':
+        selectedPolygon->polygon.transformation.shearY -= 0.05f;
+        break;
+      case 'x':
+        selectedPolygon->polygon.transformation.reflectX =
+            !selectedPolygon->polygon.transformation.reflectX;
+        break;
+      case 'y':
+        selectedPolygon->polygon.transformation.reflectY =
+            !selectedPolygon->polygon.transformation.reflectY;
+        break;
+    }
+    updatePolygonTransformationMatrix(selectedPolygon);
+  }
+
   glutPostRedisplay();  // Redesenha a cena para preview da linha
 }
 
