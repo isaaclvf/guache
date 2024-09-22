@@ -289,10 +289,8 @@ void updatePointTransformationMatrix(PointNode* pointNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glScalef(pointNode->point.transformation.scale,
-           pointNode->point.transformation.scale, 0.0f);
-  glTranslatef(pointNode->point.transformation.tx,
-               pointNode->point.transformation.ty, 0.0f);
+  // glScalef(pointNode->point.transformation.scale,
+  //          pointNode->point.transformation.scale, 0.0f);
 
   GLfloat shearMatrix[16] = {1.0f,
                              pointNode->point.transformation.shearY,
@@ -327,6 +325,8 @@ void updatePointTransformationMatrix(PointNode* pointNode) {
   }
 
   glRotatef(pointNode->point.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(pointNode->point.transformation.tx,
+               pointNode->point.transformation.ty, 0.0f);
 
   // Save the updated transformation matrix
   glGetFloatv(GL_MODELVIEW_MATRIX, pointNode->point.transformation.matrix);
@@ -336,8 +336,6 @@ void updateLineTransformationMatrix(LineNode* lineNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glScalef(lineNode->line.transformation.scale,
-           lineNode->line.transformation.scale, 0.0f);
   glTranslatef(lineNode->line.transformation.tx,
                lineNode->line.transformation.ty, 0.0f);
 
@@ -376,9 +374,11 @@ void updateLineTransformationMatrix(LineNode* lineNode) {
   float centerX = (lineNode->line.x0 + lineNode->line.x1) / 2.0f;
   float centerY = (lineNode->line.y0 + lineNode->line.y1) / 2.0f;
 
-  glTranslatef(-centerX, -centerY, 0.0f);
-  glRotatef(lineNode->line.transformation.angle, 0.0, 0.0, 1.0);
   glTranslatef(centerX, centerY, 0.0f);
+  glScalef(lineNode->line.transformation.scale,
+           lineNode->line.transformation.scale, 0.0f);
+  glRotatef(lineNode->line.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(-centerX, -centerY, 0.0f);
 
   // Save the updated transformation matrix
   glGetFloatv(GL_MODELVIEW_MATRIX, lineNode->line.transformation.matrix);
@@ -388,8 +388,6 @@ void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glScalef(polygonNode->polygon.transformation.scale,
-           polygonNode->polygon.transformation.scale, 0.0f);
   glTranslatef(polygonNode->polygon.transformation.tx,
                polygonNode->polygon.transformation.ty, 0.0f);
 
@@ -436,9 +434,11 @@ void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
   centerX = centerX / polygonNode->polygon.vertexCount;
   centerY = centerY / polygonNode->polygon.vertexCount;
 
-  glTranslatef(-centerX, -centerY, 0.0f);
-  glRotatef(polygonNode->polygon.transformation.angle, 0.0, 0.0, 1.0);
   glTranslatef(centerX, centerY, 0.0f);
+  glScalef(polygonNode->polygon.transformation.scale,
+           polygonNode->polygon.transformation.scale, 0.0f);
+  glRotatef(polygonNode->polygon.transformation.angle, 0.0, 0.0, 1.0);
+  glTranslatef(-centerX, -centerY, 0.0f);
 
   // Save the updated transformation matrix
   glGetFloatv(GL_MODELVIEW_MATRIX, polygonNode->polygon.transformation.matrix);
@@ -796,10 +796,8 @@ int isCloseToFirstPoint(float x, float y) {
 void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
-    printf("Mouse = x: %d, y: %d\n", x, y);
     float worldX = (float)x - (windowWidth / 2);
     float worldY = (float)-y + (windowHeight / 2);
-    printf("World = x: %.2f, y: %.2f\n", worldX, worldY);
 
     if (currentMode == DRAW_POINT) {
       addPoint(worldX, worldY, currentColor[0], currentColor[1],
@@ -1048,7 +1046,6 @@ void keyPress(unsigned char key, int x, int y) {
             !selectedLine->line.transformation.reflectY;
         break;
     }
-    printf("selectedLine = %p\n", selectedLine);
     updateLineTransformationMatrix(selectedLine);
   }
 
