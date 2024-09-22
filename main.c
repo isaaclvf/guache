@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "color.h"
+
 #define MAX_VERTICES 10
 
 int windowWidth = 800;
@@ -729,7 +731,6 @@ PolygonNode* selectPolygon(int sx, int sy) {
         y0 = current->polygon.vertices[i - 1][1];
       }
 
-      printf("verificando reta (%.0f,%.0f)->(%.0f,%.0f)", x0, y0, x1, y1);
       if (((x0 > sx) && (x1 > sx)) &&
           (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
         walls++;
@@ -1201,6 +1202,34 @@ void loadFromFile(const char* filename) {
   fclose(file);
 }
 
+void printInitialInfo() {
+  printf("\nGuache - 2D Painter\n");
+  printf("\n");
+  printf("%s%s  1  %s", BLKB, UWHT, CRESET);
+  printf("%s%s  2  %s", REDB, UWHT, CRESET);
+  printf("%s%s  3  %s", GRNB, UWHT, CRESET);
+  printf("%s%s  4  %s", BLUB, UWHT, CRESET);
+  printf("%s%s  5  %s", YELB, UWHT, CRESET);
+  printf("%s%s  6  %s", MAGB, UWHT, CRESET);
+  printf("%s%s  7  %s", CYNB, UWHT, CRESET);
+  printf("\n\n");
+
+  printf("v      -> Point\n");
+  printf("b      -> Line\n");
+  printf("n      -> Polygon\n");
+  printf("m      -> Select\n");
+  printf("\n");
+
+  printf("  w  \n");
+  printf("a s d  -> Translate\n");
+  printf("q e    -> Rotate\n");
+  printf("- +    -> Scale\n");
+  printf("  i  \n");
+  printf("j k l  -> Shear\n");
+  printf("x y    -> Reflect\n");
+  printf("\n");
+}
+
 int main(int argc, char* argv[]) {
   if (argc > 1) {
     if (strcmp(argv[1], "--save") == 0 && argc == 3) {
@@ -1216,6 +1245,8 @@ int main(int argc, char* argv[]) {
       return 1;
     }
   }
+
+  printInitialInfo();
 
   glutInit(&argc, argv);
   // Mudar para GLUT_DOUBLE depois
