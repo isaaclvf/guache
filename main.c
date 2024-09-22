@@ -11,6 +11,7 @@
 
 int windowWidth = 800;
 int windowHeight = 600;
+float tolerance = 5.0;
 
 char saveFile[256] = ""; // Nome do arquivo para salvar
 int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
@@ -82,6 +83,37 @@ typedef struct PolygonList {
 PointList pointList = {NULL};
 LineList lineList = {NULL};
 PolygonList polygonList = {NULL};
+
+PointNode* selectedPoint = {NULL};
+LineNode* selectedLine = {NULL};
+PolygonNode* selectedPolygon = {NULL};
+int isAnythingSelected = 0;
+
+void clearSelection() {
+  if (selectedPoint != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedPoint->point.color[i] = 0.0;
+    }
+  }
+
+  if (selectedLine != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedLine->line.color[i] = 0.0;
+    }
+  }
+
+  if (selectedPolygon != NULL) {
+    for (int i = 0; i < 2; i++) {
+      selectedPolygon->polygon.color[i] = 0.0;
+    }
+  }
+  
+  isAnythingSelected = 0;
+  selectedPoint = NULL;
+  selectedLine = NULL;
+  selectedPolygon = NULL;
+}
+
 
 void addPoint(float x, float y, float red, float green, float blue,
               float size) {
@@ -215,6 +247,7 @@ void removeLineNode(LineNode *node) {
     nextNode->prev = node->prev;
   }
 
+  selectedPoint = NULL;
   free(node);
 }
 
@@ -323,6 +356,149 @@ void freePolygonList() {
   }
 }
 
+//selection algorithms
+
+PointNode* selectPoint(int sx, int sy) {
+  PointNode* current = pointList.head;
+
+  while (current != NULL) {
+    if ((current->point.x <= sx + tolerance) && (current->point.x >= sx - tolerance)
+    && (current->point.y <= sy + tolerance) && (current->point.y >= sy - tolerance)) {
+      current->point.color[0]=1.0;
+      current->point.color[1]=0.0;
+      current->point.color[2]=0.0;
+      isAnythingSelected = 1;
+      return current;
+    }
+    current = current->next;
+  }
+  return NULL;
+}
+
+  int auxSelectLine (float x, float y, float X, float Y) {
+    int xmax = x + tolerance, xmin = x - tolerance, ymax = y + tolerance, ymin = y - tolerance;
+
+      if ((X <= xmax) && (X >= xmin)
+      && (Y <= ymax) && (Y >= ymin)) {
+        return 1;
+      }
+    
+    return 0;
+  }
+
+  LineNode* selectLine(int sx, int sy) {
+    LineNode* current = lineList.head;
+
+    int xmax = sx + tolerance, xmin = sx - tolerance, ymax = sy + tolerance, ymin = sy - tolerance;
+    int select = 0;
+    float tempVertice;
+
+    while (current != NULL) {
+      if (auxSelectLine(sx, sy, current->line.x0, current->line.y0)
+      || auxSelectLine(sx, sy, current->line.x1, current->line.y1)) {
+        select = 1;
+      } else {
+        //[TO DO] conferir para x0 E x1, y0 E y1!!!
+        if (current->line.x0 < xmin) {
+          tempVertice = current->line.y0 + ((xmin - current->line.x0) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
+          if (auxSelectLine(sx, sy, xmin, tempVertice)) {
+            select = 1;
+          } 
+        } else if (current->line.x0 > xmax) {
+          tempVertice = current->line.y0 + ((xmax - current->line.x0) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
+          if (auxSelectLine(sx, sy, xmax, tempVertice)) {
+            select = 1;
+          }
+        } else if (current->line.y0 < ymin) {
+          tempVertice = current->line.x0 + ((ymin - current->line.y0) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
+          if (auxSelectLine(sx, sy, tempVertice, ymin)) {
+            select = 1;
+          }
+        } else if (current->line.y0 > ymax) {
+          tempVertice = current->line.x0 + ((ymax - current->line.y0) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
+          if (auxSelectLine(sx, sy, tempVertice, ymax)) {
+            select = 1;
+          }
+        } else if (current->line.x1 < xmin) {
+          tempVertice = current->line.y1 + ((xmin - current->line.x1) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
+          if (auxSelectLine(sx, sy, xmin, tempVertice)) {
+            select = 1;
+          } 
+        } else if (current->line.x1 > xmax) {
+          tempVertice = current->line.y1 + ((xmax - current->line.x1) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
+          if (auxSelectLine(sx, sy, xmax, tempVertice)) {
+            select = 1;
+          }
+        } else if (current->line.y1 < ymin) {
+          tempVertice = current->line.x1 + ((ymin - current->line.y1) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
+          if (auxSelectLine(sx, sy, tempVertice, ymin)) {
+            select = 1;
+          }
+        } else if (current->line.y1 > ymax) {
+          tempVertice = current->line.x1 + ((ymax - current->line.y1) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
+          if (auxSelectLine(sx, sy, tempVertice, ymax)) {
+            select = 1;
+          }
+        } 
+      }
+      if (select) {
+        current->line.color[0]=1.0;
+        current->line.color[1]=0.0;
+        current->line.color[2]=0.0;
+        isAnythingSelected = 1;
+        return current;
+      }
+      current = current->next;
+    }
+    return NULL;
+  }
+
+  PolygonNode* selectPolygon(int sx, int sy) {
+    PolygonNode* current = polygonList.head;
+    float x1, y1, x0, y0;
+    int walls;
+
+    while (current != NULL) {
+      walls = 0;
+      for (int i = 0; i < current->polygon.vertexCount; i++) {
+        
+        if (i == 0) {
+          x1 = current->polygon.vertices[i][0];
+          y1 = current->polygon.vertices[i][1];
+          x0 = current->polygon.vertices[current->polygon.vertexCount-1][0];
+          y0 = current->polygon.vertices[current->polygon.vertexCount-1][1];
+        } else {
+          x1 = current->polygon.vertices[i][0];
+          y1 = current->polygon.vertices[i][1];
+          x0 = current->polygon.vertices[i-1][0];
+          y0 = current->polygon.vertices[i-1][1];
+        }
+
+        printf("verificando reta (%.0f,%.0f)->(%.0f,%.0f)", x0, y0, x1, y1);
+          if (((x0 > sx) && (x1 > sx)) && (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
+            walls++;
+        } else if ((((x0 < sx) && (x1 > sx))||((x1 < sx) && (x0 > sx))) && (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
+          int xi = x0 + (((sy-y0)*(x1-x0))/(y1-y0));
+          if (xi > sx) {
+            walls++;
+          }
+        }
+      }
+
+      if (walls % 2 != 0) {
+        current->polygon.color[0]=1.0;
+        current->polygon.color[1]=0.0;
+        current->polygon.color[2]=0.0;
+        isAnythingSelected = 1;
+        return current;
+      } 
+
+      current = current->next;
+    }
+
+    return NULL;
+  }
+
 void init() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -352,7 +528,6 @@ void display() {
 }
 
 // Usado para fechar o polígono
-float tolerance = 10.0f;
 int isCloseToFirstPoint(float x, float y) {
   if (tempPolygon.vertexCount == 0)
     return 0; // Nenhum vértice ainda
@@ -378,7 +553,7 @@ void onMouseClick(int button, int state, int x, int y) {
         isDrawingLine = 1;
       } else {
         // Se chegou aqui está no segundo clique do desenho de linha
-        addLine(tempLineX0, tempLineY0, worldX, worldY, 0.0f, 0.0f, 1.0f);
+        addLine(tempLineX0, tempLineY0, worldX, worldY, 0.0f, 0.0f, 0.0f);
         isDrawingLine = 0;
       }
     } else if (currentMode == DRAW_POLYGON) {
@@ -391,7 +566,7 @@ void onMouseClick(int button, int state, int x, int y) {
         if (isCloseToFirstPoint(worldX, worldY) &&
             tempPolygon.vertexCount > 2) {
           addPolygon(tempPolygon.vertices, tempPolygon.vertexCount, 0.0f, 0.0f,
-                     1.0f);
+                     0.0f);
           isDrawingPolygon = 0;
         } else {
           // Adiciona vértice ao polígono
@@ -400,6 +575,19 @@ void onMouseClick(int button, int state, int x, int y) {
           tempPolygon.vertexCount++;
         }
       }
+    } else if (currentMode == SELECT) {
+      if (isAnythingSelected != 0 || selectedPoint != NULL) {
+        clearSelection();
+      }
+
+      selectedPoint = selectPoint(worldX, worldY);
+
+      if (isAnythingSelected == 0) {
+        selectedLine = selectLine(worldX, worldY);
+        if (isAnythingSelected == 0) {
+          selectedPolygon = selectPolygon(worldX, worldY);
+        } 
+      } 
     }
     // Redesenhar a janela
     glutPostRedisplay();
@@ -426,15 +614,27 @@ void keyPress(unsigned char key, int x, int y) {
              "arquivo.\n");
     }
   } else if (key == '1') {
+    clearSelection();
     currentMode = DRAW_POINT;
     printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
   } else if (key == '2') {
+    clearSelection();
     currentMode = DRAW_LINE;
     printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
   } else if (key == '3') {
+    clearSelection();
     currentMode = DRAW_POLYGON;
     printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
+  } else if (key == '4') {
+    currentMode = SELECT;
+    printf("Modo de \e[1;32mseleção\e[0m ativo.\n");
+  } else if (key == 'd') {
+    if (selectedPoint != NULL) {
+     removePointNode(selectedPoint);
+     isAnythingSelected = 0;
+    }
   }
+  glutPostRedisplay(); // Redesenha a cena para preview da linha
 }
 
 void saveToFile(const char *filename) {
