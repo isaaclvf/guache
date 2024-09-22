@@ -13,29 +13,39 @@ int windowWidth = 800;
 int windowHeight = 600;
 float tolerance = 5.0;
 
-char saveFile[256] = ""; // Nome do arquivo para salvar
-int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
+char saveFile[256] = "";  // Nome do arquivo para salvar
+int shouldSave = 0;  // Flag que indica se o programa vai salvar em um arquivo
 
 typedef enum { DRAW_POINT, DRAW_LINE, DRAW_POLYGON, SELECT } Mode;
 Mode currentMode = DRAW_POINT;
 
 typedef struct {
+  float matrix[16];
+  float tx, ty;
+  float angle;
+  float scale;
+  float shearX, shearY;
+  int reflectX;
+  int reflectY;
+} Transformation;
+
+typedef struct {
   float x, y;
-  float color[3]; // RGB
+  float color[3];  // RGB
   float size;
 } Point;
 
 typedef struct {
-  float x0, y0;   // Start
-  float x1, y1;   // End
-  float color[3]; // RGB
+  float x0, y0;    // Start
+  float x1, y1;    // End
+  float color[3];  // RGB
   // float thickness;
 } Line;
 
 typedef struct {
   int vertexCount;
-  float vertices[MAX_VERTICES][2]; // Coordenadas dos vertices
-  float color[3];                  // RGB
+  float vertices[MAX_VERTICES][2];  // Coordenadas dos vertices
+  float color[3];                   // RGB
 } Polygon;
 
 // Usado na criação de objetos
@@ -52,32 +62,32 @@ int isDrawingPolygon = 0;
 
 typedef struct PointNode {
   Point point;
-  struct PointNode *next;
-  struct PointNode *prev;
+  struct PointNode* next;
+  struct PointNode* prev;
 } PointNode;
 
 typedef struct LineNode {
   Line line;
-  struct LineNode *next;
-  struct LineNode *prev;
+  struct LineNode* next;
+  struct LineNode* prev;
 } LineNode;
 
 typedef struct PolygonNode {
   Polygon polygon;
-  struct PolygonNode *next;
-  struct PolygonNode *prev;
+  struct PolygonNode* next;
+  struct PolygonNode* prev;
 } PolygonNode;
 
 typedef struct PointList {
-  PointNode *head;
+  PointNode* head;
 } PointList;
 
 typedef struct LineList {
-  LineNode *head;
+  LineNode* head;
 } LineList;
 
 typedef struct PolygonList {
-  PolygonNode *head;
+  PolygonNode* head;
 } PolygonList;
 
 PointList pointList = {NULL};
@@ -107,17 +117,16 @@ void clearSelection() {
       selectedPolygon->polygon.color[i] = 0.0;
     }
   }
-  
+
   isAnythingSelected = 0;
   selectedPoint = NULL;
   selectedLine = NULL;
   selectedPolygon = NULL;
 }
 
-
 void addPoint(float x, float y, float red, float green, float blue,
               float size) {
-  PointNode *newNode = (PointNode *)malloc(sizeof(PointNode));
+  PointNode* newNode = (PointNode*)malloc(sizeof(PointNode));
 
   newNode->point.x = x;
   newNode->point.y = y;
@@ -125,8 +134,9 @@ void addPoint(float x, float y, float red, float green, float blue,
   newNode->point.color[1] = green;
   newNode->point.color[2] = blue;
   newNode->point.size = size;
+  newNode->prev = NULL;
 
-  PointNode *oldHead = pointList.head;
+  PointNode* oldHead = pointList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -136,8 +146,8 @@ void addPoint(float x, float y, float red, float green, float blue,
   pointList.head = newNode;
 }
 
-void addPointNode(PointNode *newNode) {
-  PointNode *oldHead = pointList.head;
+void addPointNode(PointNode* newNode) {
+  PointNode* oldHead = pointList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -149,7 +159,7 @@ void addPointNode(PointNode *newNode) {
 
 void addLine(float x0, float y0, float x1, float y1, float red, float green,
              float blue) {
-  LineNode *newNode = (LineNode *)malloc(sizeof(LineNode));
+  LineNode* newNode = (LineNode*)malloc(sizeof(LineNode));
 
   newNode->line.x0 = x0;
   newNode->line.y0 = y0;
@@ -158,8 +168,9 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   newNode->line.color[0] = red;
   newNode->line.color[1] = green;
   newNode->line.color[2] = blue;
+  newNode->prev = NULL;
 
-  LineNode *oldHead = lineList.head;
+  LineNode* oldHead = lineList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -169,8 +180,8 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   lineList.head = newNode;
 }
 
-void addLineNode(LineNode *newNode) {
-  LineNode *oldHead = lineList.head;
+void addLineNode(LineNode* newNode) {
+  LineNode* oldHead = lineList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -187,7 +198,7 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
     return;
   }
 
-  PolygonNode *newNode = (PolygonNode *)malloc(sizeof(PolygonNode));
+  PolygonNode* newNode = (PolygonNode*)malloc(sizeof(PolygonNode));
 
   newNode->polygon.vertexCount = vertexCount;
   for (int i = 0; i < vertexCount; i++) {
@@ -198,19 +209,9 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   newNode->polygon.color[0] = red;
   newNode->polygon.color[1] = green;
   newNode->polygon.color[2] = blue;
+  newNode->prev = NULL;
 
-  PolygonNode *oldHead = polygonList.head;
-
-  if (oldHead) {
-    oldHead->prev = newNode;
-  }
-
-  newNode->next = oldHead;
-  polygonList.head = newNode;
-}
-
-void addPolygonNode(PolygonNode *newNode) {
-  PolygonNode *oldHead = polygonList.head;
+  PolygonNode* oldHead = polygonList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -220,9 +221,20 @@ void addPolygonNode(PolygonNode *newNode) {
   polygonList.head = newNode;
 }
 
-void removePointNode(PointNode *node) {
-  PointNode *prevNode = node->prev;
-  PointNode *nextNode = node->next;
+void addPolygonNode(PolygonNode* newNode) {
+  PolygonNode* oldHead = polygonList.head;
+
+  if (oldHead) {
+    oldHead->prev = newNode;
+  }
+
+  newNode->next = oldHead;
+  polygonList.head = newNode;
+}
+
+void removePointNode(PointNode* node) {
+  PointNode* prevNode = node->prev;
+  PointNode* nextNode = node->next;
 
   if (prevNode) {
     prevNode->next = node->next;
@@ -235,9 +247,9 @@ void removePointNode(PointNode *node) {
   free(node);
 }
 
-void removeLineNode(LineNode *node) {
-  LineNode *prevNode = node->prev;
-  LineNode *nextNode = node->next;
+void removeLineNode(LineNode* node) {
+  LineNode* prevNode = node->prev;
+  LineNode* nextNode = node->next;
 
   if (prevNode) {
     prevNode->next = node->next;
@@ -251,9 +263,9 @@ void removeLineNode(LineNode *node) {
   free(node);
 }
 
-void removePolygonNode(PolygonNode *node) {
-  PolygonNode *prevNode = node->prev;
-  PolygonNode *nextNode = node->next;
+void removePolygonNode(PolygonNode* node) {
+  PolygonNode* prevNode = node->prev;
+  PolygonNode* nextNode = node->next;
 
   if (prevNode) {
     prevNode->next = node->next;
@@ -267,7 +279,7 @@ void removePolygonNode(PolygonNode *node) {
 }
 
 void renderAllPoints() {
-  PointNode *current = pointList.head;
+  PointNode* current = pointList.head;
 
   // TODO: Encontrar uma forma de renderizar botões
   // de tamanhos diferentes. Pelo visto, não dá pra usar
@@ -286,7 +298,7 @@ void renderAllPoints() {
 }
 
 void renderAllLines() {
-  LineNode *current = lineList.head;
+  LineNode* current = lineList.head;
 
   glBegin(GL_LINES);
   while (current != NULL) {
@@ -302,7 +314,7 @@ void renderAllLines() {
 }
 
 void renderAllPolygons() {
-  PolygonNode *current = polygonList.head;
+  PolygonNode* current = polygonList.head;
 
   while (current != NULL) {
     glColor3f(current->polygon.color[0], current->polygon.color[1],
@@ -330,43 +342,45 @@ void renderAllPolygons() {
 }
 
 void freePointList() {
-  PointNode *current = pointList.head;
+  PointNode* current = pointList.head;
   while (current != NULL) {
-    PointNode *next = current->next;
+    PointNode* next = current->next;
     free(current);
     current = next;
   }
 }
 
 void freeLineList() {
-  LineNode *current = lineList.head;
+  LineNode* current = lineList.head;
   while (current != NULL) {
-    LineNode *next = current->next;
+    LineNode* next = current->next;
     free(current);
     current = next;
   }
 }
 
 void freePolygonList() {
-  PolygonNode *current = polygonList.head;
+  PolygonNode* current = polygonList.head;
   while (current != NULL) {
-    PolygonNode *next = current->next;
+    PolygonNode* next = current->next;
     free(current);
     current = next;
   }
 }
 
-//selection algorithms
+// selection algorithms
 
 PointNode* selectPoint(int sx, int sy) {
   PointNode* current = pointList.head;
 
   while (current != NULL) {
-    if ((current->point.x <= sx + tolerance) && (current->point.x >= sx - tolerance)
-    && (current->point.y <= sy + tolerance) && (current->point.y >= sy - tolerance)) {
-      current->point.color[0]=1.0;
-      current->point.color[1]=0.0;
-      current->point.color[2]=0.0;
+    if ((current->point.x <= sx + tolerance) &&
+        (current->point.x >= sx - tolerance) &&
+        (current->point.y <= sy + tolerance) &&
+        (current->point.y >= sy - tolerance)) {
+      current->point.color[0] = 1.0;
+      current->point.color[1] = 0.0;
+      current->point.color[2] = 0.0;
       isAnythingSelected = 1;
       return current;
     }
@@ -375,129 +389,155 @@ PointNode* selectPoint(int sx, int sy) {
   return NULL;
 }
 
-  int auxSelectLine (float x, float y, float X, float Y) {
-    int xmax = x + tolerance, xmin = x - tolerance, ymax = y + tolerance, ymin = y - tolerance;
+int auxSelectLine(float x, float y, float X, float Y) {
+  int xmax = x + tolerance, xmin = x - tolerance, ymax = y + tolerance,
+      ymin = y - tolerance;
 
-      if ((X <= xmax) && (X >= xmin)
-      && (Y <= ymax) && (Y >= ymin)) {
-        return 1;
-      }
-    
-    return 0;
+  if ((X <= xmax) && (X >= xmin) && (Y <= ymax) && (Y >= ymin)) {
+    return 1;
   }
 
-  LineNode* selectLine(int sx, int sy) {
-    LineNode* current = lineList.head;
+  return 0;
+}
 
-    int xmax = sx + tolerance, xmin = sx - tolerance, ymax = sy + tolerance, ymin = sy - tolerance;
-    int select = 0;
-    float tempVertice;
+LineNode* selectLine(int sx, int sy) {
+  LineNode* current = lineList.head;
 
-    while (current != NULL) {
-      if (auxSelectLine(sx, sy, current->line.x0, current->line.y0)
-      || auxSelectLine(sx, sy, current->line.x1, current->line.y1)) {
-        select = 1;
+  int xmax = sx + tolerance, xmin = sx - tolerance, ymax = sy + tolerance,
+      ymin = sy - tolerance;
+  int select = 0;
+  float tempVertice;
+
+  while (current != NULL) {
+    if (auxSelectLine(sx, sy, current->line.x0, current->line.y0) ||
+        auxSelectLine(sx, sy, current->line.x1, current->line.y1)) {
+      select = 1;
+    } else {
+      //[TO DO] conferir para x0 E x1, y0 E y1!!!
+      if (current->line.x0 < xmin) {
+        tempVertice =
+            current->line.y0 +
+            ((xmin - current->line.x0) * (current->line.y1 - current->line.y0) /
+             (current->line.x1 - current->line.x0));
+        if (auxSelectLine(sx, sy, xmin, tempVertice)) {
+          select = 1;
+        }
+      } else if (current->line.x0 > xmax) {
+        tempVertice =
+            current->line.y0 +
+            ((xmax - current->line.x0) * (current->line.y1 - current->line.y0) /
+             (current->line.x1 - current->line.x0));
+        if (auxSelectLine(sx, sy, xmax, tempVertice)) {
+          select = 1;
+        }
+      } else if (current->line.y0 < ymin) {
+        tempVertice =
+            current->line.x0 +
+            ((ymin - current->line.y0) * (current->line.x1 - current->line.x0) /
+             (current->line.y1 - current->line.y0));
+        if (auxSelectLine(sx, sy, tempVertice, ymin)) {
+          select = 1;
+        }
+      } else if (current->line.y0 > ymax) {
+        tempVertice =
+            current->line.x0 +
+            ((ymax - current->line.y0) * (current->line.x1 - current->line.x0) /
+             (current->line.y1 - current->line.y0));
+        if (auxSelectLine(sx, sy, tempVertice, ymax)) {
+          select = 1;
+        }
+      } else if (current->line.x1 < xmin) {
+        tempVertice =
+            current->line.y1 +
+            ((xmin - current->line.x1) * (current->line.y1 - current->line.y0) /
+             (current->line.x1 - current->line.x0));
+        if (auxSelectLine(sx, sy, xmin, tempVertice)) {
+          select = 1;
+        }
+      } else if (current->line.x1 > xmax) {
+        tempVertice =
+            current->line.y1 +
+            ((xmax - current->line.x1) * (current->line.y1 - current->line.y0) /
+             (current->line.x1 - current->line.x0));
+        if (auxSelectLine(sx, sy, xmax, tempVertice)) {
+          select = 1;
+        }
+      } else if (current->line.y1 < ymin) {
+        tempVertice =
+            current->line.x1 +
+            ((ymin - current->line.y1) * (current->line.x1 - current->line.x0) /
+             (current->line.y1 - current->line.y0));
+        if (auxSelectLine(sx, sy, tempVertice, ymin)) {
+          select = 1;
+        }
+      } else if (current->line.y1 > ymax) {
+        tempVertice =
+            current->line.x1 +
+            ((ymax - current->line.y1) * (current->line.x1 - current->line.x0) /
+             (current->line.y1 - current->line.y0));
+        if (auxSelectLine(sx, sy, tempVertice, ymax)) {
+          select = 1;
+        }
+      }
+    }
+    if (select) {
+      current->line.color[0] = 1.0;
+      current->line.color[1] = 0.0;
+      current->line.color[2] = 0.0;
+      isAnythingSelected = 1;
+      return current;
+    }
+    current = current->next;
+  }
+  return NULL;
+}
+
+PolygonNode* selectPolygon(int sx, int sy) {
+  PolygonNode* current = polygonList.head;
+  float x1, y1, x0, y0;
+  int walls;
+
+  while (current != NULL) {
+    walls = 0;
+    for (int i = 0; i < current->polygon.vertexCount; i++) {
+      if (i == 0) {
+        x1 = current->polygon.vertices[i][0];
+        y1 = current->polygon.vertices[i][1];
+        x0 = current->polygon.vertices[current->polygon.vertexCount - 1][0];
+        y0 = current->polygon.vertices[current->polygon.vertexCount - 1][1];
       } else {
-        //[TO DO] conferir para x0 E x1, y0 E y1!!!
-        if (current->line.x0 < xmin) {
-          tempVertice = current->line.y0 + ((xmin - current->line.x0) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
-          if (auxSelectLine(sx, sy, xmin, tempVertice)) {
-            select = 1;
-          } 
-        } else if (current->line.x0 > xmax) {
-          tempVertice = current->line.y0 + ((xmax - current->line.x0) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
-          if (auxSelectLine(sx, sy, xmax, tempVertice)) {
-            select = 1;
-          }
-        } else if (current->line.y0 < ymin) {
-          tempVertice = current->line.x0 + ((ymin - current->line.y0) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
-          if (auxSelectLine(sx, sy, tempVertice, ymin)) {
-            select = 1;
-          }
-        } else if (current->line.y0 > ymax) {
-          tempVertice = current->line.x0 + ((ymax - current->line.y0) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
-          if (auxSelectLine(sx, sy, tempVertice, ymax)) {
-            select = 1;
-          }
-        } else if (current->line.x1 < xmin) {
-          tempVertice = current->line.y1 + ((xmin - current->line.x1) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
-          if (auxSelectLine(sx, sy, xmin, tempVertice)) {
-            select = 1;
-          } 
-        } else if (current->line.x1 > xmax) {
-          tempVertice = current->line.y1 + ((xmax - current->line.x1) * (current->line.y1 - current->line.y0) / (current->line.x1 - current->line.x0));
-          if (auxSelectLine(sx, sy, xmax, tempVertice)) {
-            select = 1;
-          }
-        } else if (current->line.y1 < ymin) {
-          tempVertice = current->line.x1 + ((ymin - current->line.y1) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
-          if (auxSelectLine(sx, sy, tempVertice, ymin)) {
-            select = 1;
-          }
-        } else if (current->line.y1 > ymax) {
-          tempVertice = current->line.x1 + ((ymax - current->line.y1) * (current->line.x1 - current->line.x0) / (current->line.y1 - current->line.y0));
-          if (auxSelectLine(sx, sy, tempVertice, ymax)) {
-            select = 1;
-          }
-        } 
+        x1 = current->polygon.vertices[i][0];
+        y1 = current->polygon.vertices[i][1];
+        x0 = current->polygon.vertices[i - 1][0];
+        y0 = current->polygon.vertices[i - 1][1];
       }
-      if (select) {
-        current->line.color[0]=1.0;
-        current->line.color[1]=0.0;
-        current->line.color[2]=0.0;
-        isAnythingSelected = 1;
-        return current;
-      }
-      current = current->next;
-    }
-    return NULL;
-  }
 
-  PolygonNode* selectPolygon(int sx, int sy) {
-    PolygonNode* current = polygonList.head;
-    float x1, y1, x0, y0;
-    int walls;
-
-    while (current != NULL) {
-      walls = 0;
-      for (int i = 0; i < current->polygon.vertexCount; i++) {
-        
-        if (i == 0) {
-          x1 = current->polygon.vertices[i][0];
-          y1 = current->polygon.vertices[i][1];
-          x0 = current->polygon.vertices[current->polygon.vertexCount-1][0];
-          y0 = current->polygon.vertices[current->polygon.vertexCount-1][1];
-        } else {
-          x1 = current->polygon.vertices[i][0];
-          y1 = current->polygon.vertices[i][1];
-          x0 = current->polygon.vertices[i-1][0];
-          y0 = current->polygon.vertices[i-1][1];
-        }
-
-        printf("verificando reta (%.0f,%.0f)->(%.0f,%.0f)", x0, y0, x1, y1);
-          if (((x0 > sx) && (x1 > sx)) && (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
-            walls++;
-        } else if ((((x0 < sx) && (x1 > sx))||((x1 < sx) && (x0 > sx))) && (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
-          int xi = x0 + (((sy-y0)*(x1-x0))/(y1-y0));
-          if (xi > sx) {
-            walls++;
-          }
+      printf("verificando reta (%.0f,%.0f)->(%.0f,%.0f)", x0, y0, x1, y1);
+      if (((x0 > sx) && (x1 > sx)) &&
+          (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
+        walls++;
+      } else if ((((x0 < sx) && (x1 > sx)) || ((x1 < sx) && (x0 > sx))) &&
+                 (((y0 > sy) && (y1 < sy)) || ((y1 > sy) && (y0 < sy)))) {
+        int xi = x0 + (((sy - y0) * (x1 - x0)) / (y1 - y0));
+        if (xi > sx) {
+          walls++;
         }
       }
-
-      if (walls % 2 != 0) {
-        current->polygon.color[0]=1.0;
-        current->polygon.color[1]=0.0;
-        current->polygon.color[2]=0.0;
-        isAnythingSelected = 1;
-        return current;
-      } 
-
-      current = current->next;
     }
 
-    return NULL;
+    if (walls % 2 != 0) {
+      current->polygon.color[0] = 1.0;
+      current->polygon.color[1] = 0.0;
+      current->polygon.color[2] = 0.0;
+      isAnythingSelected = 1;
+      return current;
+    }
+
+    current = current->next;
   }
+
+  return NULL;
+}
 
 void init() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -530,7 +570,7 @@ void display() {
 // Usado para fechar o polígono
 int isCloseToFirstPoint(float x, float y) {
   if (tempPolygon.vertexCount == 0)
-    return 0; // Nenhum vértice ainda
+    return 0;  // Nenhum vértice ainda
   float dx = x - tempPolygon.vertices[0][0];
   float dy = y - tempPolygon.vertices[0][1];
   return sqrt(dx * dx + dy * dy) < tolerance;
@@ -540,7 +580,7 @@ void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
     float worldX = (float)x;
-    float worldY = (windowHeight - y); // y começa do outro lado
+    float worldY = (windowHeight - y);  // y começa do outro lado
 
     if (currentMode == DRAW_POINT) {
       addPoint(worldX, worldY, 0.0f, 0.0f, 0.0f, 5.0f);
@@ -586,8 +626,8 @@ void onMouseClick(int button, int state, int x, int y) {
         selectedLine = selectLine(worldX, worldY);
         if (isAnythingSelected == 0) {
           selectedPolygon = selectPolygon(worldX, worldY);
-        } 
-      } 
+        }
+      }
     }
     // Redesenhar a janela
     glutPostRedisplay();
@@ -597,21 +637,22 @@ void onMouseClick(int button, int state, int x, int y) {
 void mouseMoveCallback(int x, int y) {
   if (isDrawingLine) {
     currentMouseX = (float)x;
-    currentMouseY = (float)(windowHeight - y); // y começa do outro lado
-    glutPostRedisplay(); // Redesenha a cena para preview da linha
+    currentMouseY = (float)(windowHeight - y);  // y começa do outro lado
+    glutPostRedisplay();  // Redesenha a cena para preview da linha
   }
 }
 
-void saveToFile(const char *filename);
+void saveToFile(const char* filename);
 
 void keyPress(unsigned char key, int x, int y) {
-  if (key == 's' && shouldSave) {
+  if (key == '.' && shouldSave) {
     if (strlen(saveFile) > 0) {
       saveToFile(saveFile);
       printf("Salvo em %s\n", saveFile);
     } else {
-      printf("Nenhum arquivo especificado. Use --save para especificar um "
-             "arquivo.\n");
+      printf(
+          "Nenhum arquivo especificado. Use --save para especificar um "
+          "arquivo.\n");
     }
   } else if (key == '1') {
     clearSelection();
@@ -630,21 +671,31 @@ void keyPress(unsigned char key, int x, int y) {
     printf("Modo de \e[1;32mseleção\e[0m ativo.\n");
   } else if (key == 'd') {
     if (selectedPoint != NULL) {
-     removePointNode(selectedPoint);
-     isAnythingSelected = 0;
+      removePointNode(selectedPoint);
+      isAnythingSelected = 0;
+    }
+
+    if (selectedLine) {
+      removeLineNode(selectedLine);
+      isAnythingSelected = 0;
+    }
+
+    if (selectedPolygon) {
+      removePolygonNode(selectedPolygon);
+      isAnythingSelected = 0;
     }
   }
-  glutPostRedisplay(); // Redesenha a cena para preview da linha
+  glutPostRedisplay();  // Redesenha a cena para preview da linha
 }
 
-void saveToFile(const char *filename) {
-  FILE *file = fopen(filename, "w");
+void saveToFile(const char* filename) {
+  FILE* file = fopen(filename, "w");
   if (file == NULL) {
     printf("Erro: Não foi possível abrir o arquivo para salvar.\n");
     return;
   }
 
-  PointNode *currentPoint = pointList.head;
+  PointNode* currentPoint = pointList.head;
   while (currentPoint != NULL) {
     fprintf(file, "point %f %f %f %f %f %f\n", currentPoint->point.x,
             currentPoint->point.y, currentPoint->point.color[0],
@@ -654,7 +705,7 @@ void saveToFile(const char *filename) {
     currentPoint = currentPoint->next;
   }
 
-  LineNode *currentLine = lineList.head;
+  LineNode* currentLine = lineList.head;
   while (currentLine != NULL) {
     fprintf(file, "line %f %f %f %f %f %f %f\n", currentLine->line.x0,
             currentLine->line.y0, currentLine->line.x1, currentLine->line.y1,
@@ -664,7 +715,7 @@ void saveToFile(const char *filename) {
     currentLine = currentLine->next;
   }
 
-  PolygonNode *currentPolygon = polygonList.head;
+  PolygonNode* currentPolygon = polygonList.head;
   while (currentPolygon != NULL) {
     fprintf(file, "polygon %f %f %f %d", currentPolygon->polygon.color[0],
             currentPolygon->polygon.color[1], currentPolygon->polygon.color[2],
@@ -684,8 +735,8 @@ void saveToFile(const char *filename) {
   printf("Projeto salvo com sucesso.\n");
 }
 
-void loadFromFile(const char *filename) {
-  FILE *file = fopen(filename, "r");
+void loadFromFile(const char* filename) {
+  FILE* file = fopen(filename, "r");
   if (!file) {
     printf("Erro: Não foi possível carregar o arquivo %s.\n", filename);
     return;
@@ -694,38 +745,39 @@ void loadFromFile(const char *filename) {
   char line[256];
   while (fgets(line, sizeof(line), file)) {
     if (strncmp(line, "point", 5) == 0) {
-      PointNode *newPointNode = (PointNode *)malloc(sizeof(PointNode));
+      PointNode* newPointNode = (PointNode*)malloc(sizeof(PointNode));
       sscanf(line, "point %f %f %f %f %f %f", &newPointNode->point.x,
              &newPointNode->point.y, &newPointNode->point.color[0],
              &newPointNode->point.color[1], &newPointNode->point.color[2],
              &newPointNode->point.size);
       addPointNode(newPointNode);
     } else if (strncmp(line, "line", 4) == 0) {
-      LineNode *newLineNode = (LineNode *)malloc(sizeof(LineNode));
+      LineNode* newLineNode = (LineNode*)malloc(sizeof(LineNode));
       sscanf(line, "line %f %f %f %f %f %f %f", &newLineNode->line.x0,
              &newLineNode->line.y0, &newLineNode->line.x1,
              &newLineNode->line.y1, &newLineNode->line.color[0],
              &newLineNode->line.color[1], &newLineNode->line.color[2]);
       addLineNode(newLineNode);
     } else if (strncmp(line, "polygon", 7) == 0) {
-      PolygonNode *newPolygonNode = (PolygonNode *)malloc(sizeof(PolygonNode));
+      PolygonNode* newPolygonNode = (PolygonNode*)malloc(sizeof(PolygonNode));
       int vertexCount;
-      int offset = 0; // Número de caracters lido
+      int offset = 0;  // Número de caracters lido
       sscanf(line, "polygon %f %f %f %d%n", &newPolygonNode->polygon.color[0],
              &newPolygonNode->polygon.color[1],
              &newPolygonNode->polygon.color[2], &vertexCount, &offset);
       newPolygonNode->polygon.vertexCount = vertexCount;
 
       // Ler coordenadas de vértices
-      char *vertexData =
-          line + offset; // Pula a parte inicial para pegar os vértices
+      char* vertexData =
+          line + offset;  // Pula a parte inicial para pegar os vértices
 
       for (int i = 0; i < vertexCount; i++) {
         sscanf(vertexData, "%f %f", &newPolygonNode->polygon.vertices[i][0],
                &newPolygonNode->polygon.vertices[i][1]);
 
         // strchr retorna a primeira ocorrência de um ' ' depois de vertexData
-        vertexData = strchr(vertexData, ' ') + 1; // Move para o próximo vértice
+        vertexData =
+            strchr(vertexData, ' ') + 1;  // Move para o próximo vértice
         vertexData = strchr(vertexData, ' ') + 1;
       }
       addPolygonNode(newPolygonNode);
@@ -735,7 +787,7 @@ void loadFromFile(const char *filename) {
   fclose(file);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc > 1) {
     if (strcmp(argv[1], "--save") == 0 && argc == 3) {
       strncpy(saveFile, argv[2], sizeof(saveFile));
