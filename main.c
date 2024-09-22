@@ -457,6 +457,7 @@ void removePointNode(PointNode* node) {
   }
 
   free(node);
+  selectedPoint = NULL;
 }
 
 void removeLineNode(LineNode* node) {
@@ -471,8 +472,8 @@ void removeLineNode(LineNode* node) {
     nextNode->prev = node->prev;
   }
 
-  selectedPoint = NULL;
   free(node);
+  selectedLine = NULL;
 }
 
 void removePolygonNode(PolygonNode* node) {
@@ -488,12 +489,12 @@ void removePolygonNode(PolygonNode* node) {
   }
 
   free(node);
+  selectedPolygon = NULL;
 }
 
 void renderAllPoints() {
   PointNode* current = pointList.head;
 
-  int i = 0;
   while (current != NULL) {
     glPointSize(5.0f);
     glLoadMatrixf(current->point.transformation.matrix);
@@ -503,8 +504,6 @@ void renderAllPoints() {
     glColor3f(current->point.color[0], current->point.color[1],
               current->point.color[2]);
 
-    printf("Ponto %d - x: %.2f, y: %.2f\n", i++, current->point.x,
-           current->point.y);
     glVertex2f(current->point.x, current->point.y);
     glEnd();
 
@@ -761,7 +760,7 @@ void init() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
   glMatrixMode(GL_PROJECTION);
-  gluOrtho2D(0.0f, windowWidth, 0.0f, windowHeight);
+  gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f);
 }
 
 void display() {
@@ -797,8 +796,10 @@ int isCloseToFirstPoint(float x, float y) {
 void onMouseClick(int button, int state, int x, int y) {
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
     // Converte coordenadas da janela para coordenadas do OpenGL
-    float worldX = (float)x;
-    float worldY = (float)(windowHeight - y);  // y começa do outro lado
+    printf("Mouse = x: %d, y: %d\n", x, y);
+    float worldX = (float)x - (windowWidth / 2);
+    float worldY = (float)-y + (windowHeight / 2);
+    printf("World = x: %.2f, y: %.2f\n", worldX, worldY);
 
     if (currentMode == DRAW_POINT) {
       addPoint(worldX, worldY, currentColor[0], currentColor[1],
@@ -856,8 +857,8 @@ void onMouseClick(int button, int state, int x, int y) {
 
 void mouseMoveCallback(int x, int y) {
   if (isDrawingLine) {
-    currentMouseX = (float)x;
-    currentMouseY = (float)(windowHeight - y);  // y começa do outro lado
+    currentMouseX = (float)x - (windowWidth / 2);
+    currentMouseY = (float)-y + (windowHeight / 2);
     glutPostRedisplay();  // Redesenha a cena para preview da linha
   }
 }
@@ -1047,6 +1048,7 @@ void keyPress(unsigned char key, int x, int y) {
             !selectedLine->line.transformation.reflectY;
         break;
     }
+    printf("selectedLine = %p\n", selectedLine);
     updateLineTransformationMatrix(selectedLine);
   }
 
@@ -1225,11 +1227,6 @@ int main(int argc, char* argv[]) {
   glutInitWindowPosition(100, 100);
   glutCreateWindow("Guache - 2D Painter");
   // TODO: Ver glutReshapeFunc();
-
-  // Opções para antialiasing
-  // glEnable(GL_MULTISAMPLE);
-  // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  // glEnable(GL_LINE_SMOOTH);
 
   init();
   glutDisplayFunc(display);
