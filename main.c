@@ -3,10 +3,13 @@
 #include <stdio.h>
 
 typedef struct {
+  float matrix[16];
   float tx, ty;
   float angle;
   float scale;
-  float matrix[16];
+  float shearX, shearY;
+  int reflectX;
+  int reflectY;
 } Transformation;
 
 typedef struct {
@@ -26,10 +29,14 @@ void initTriangle() {
   t.cx = 0.0f;
   t.cy = 0.5f;
 
-  t.transformation.angle = 0.0f;
-  t.transformation.scale = 1.0f;
   t.transformation.tx = 0.0f;
   t.transformation.ty = 0.0f;
+  t.transformation.angle = 0.0f;
+  t.transformation.scale = 1.0f;
+  t.transformation.shearX = 0.0f;
+  t.transformation.shearY = 0.0f;
+  t.transformation.reflectX = 0;
+  t.transformation.reflectY = 0;
 }
 
 void updateTransformationMatrix() {
@@ -37,6 +44,38 @@ void updateTransformationMatrix() {
 
   glScalef(t.transformation.scale, t.transformation.scale, 0.0f);
   glTranslatef(t.transformation.tx, t.transformation.ty, 0.0f);
+
+  GLfloat shearMatrix[16] = {1.0f,
+                             t.transformation.shearY,
+                             0.0f,
+                             0.0f,
+                             t.transformation.shearX,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             0.0f,
+                             1.0f};
+  glMultMatrixf(shearMatrix);
+
+  if (t.transformation.reflectX) {
+    GLfloat reflectXMatrix[16] = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+                                  0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f, 0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectXMatrix);
+  }
+
+  if (t.transformation.reflectY) {
+    GLfloat reflectYMatrix[16] = {-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                  0.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+                                  0.0f,  0.0f, 0.0f, 1.0f};
+    glMultMatrixf(reflectYMatrix);
+  }
 
   float centerX = (t.ax + t.bx + t.cx) / 3.0f;
   float centerY = (t.ay + t.by + t.cy) / 3.0f;
@@ -113,6 +152,24 @@ void handleKeypress(unsigned char key, int x, int y) {
       break;
     case '-':
       t.transformation.scale -= 0.1f;
+      break;
+    case 'i':
+      t.transformation.shearX += 0.05f;
+      break;
+    case 'k':
+      t.transformation.shearX -= 0.05f;
+      break;
+    case 'j':
+      t.transformation.shearY += 0.05f;
+      break;
+    case 'l':
+      t.transformation.shearY -= 0.05f;
+      break;
+    case 'x':
+      t.transformation.reflectX = !t.transformation.reflectX;
+      break;
+    case 'y':
+      t.transformation.reflectY = !t.transformation.reflectY;
       break;
   }
 
