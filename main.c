@@ -110,6 +110,8 @@ LineNode* selectedLine = {NULL};
 PolygonNode* selectedPolygon = {NULL};
 
 int isAnythingSelected = 0;
+int isDragging = 0;
+
 float previousColor[3] = {0.0f, 0.0f, 0.0f};
 
 void clearSelection() {
@@ -553,6 +555,10 @@ void removePointNode(PointNode* node) {
   PointNode* prevNode = node->prev;
   PointNode* nextNode = node->next;
 
+  if (!prevNode && !nextNode) {
+    pointList.head = NULL;
+  }
+
   if (prevNode) {
     prevNode->next = node->next;
   }
@@ -561,6 +567,7 @@ void removePointNode(PointNode* node) {
     nextNode->prev = node->prev;
   }
 
+  printf("Removendo o ponto\n");
   free(node);
   selectedPoint = NULL;
 }
@@ -568,6 +575,10 @@ void removePointNode(PointNode* node) {
 void removeLineNode(LineNode* node) {
   LineNode* prevNode = node->prev;
   LineNode* nextNode = node->next;
+
+  if (!prevNode && !nextNode) {
+    lineList.head = NULL;
+  }
 
   if (prevNode) {
     prevNode->next = node->next;
@@ -584,6 +595,10 @@ void removeLineNode(LineNode* node) {
 void removePolygonNode(PolygonNode* node) {
   PolygonNode* prevNode = node->prev;
   PolygonNode* nextNode = node->next;
+
+  if (!prevNode && !nextNode) {
+    polygonList.head = NULL;
+  }
 
   if (prevNode) {
     prevNode->next = node->next;
@@ -993,6 +1008,8 @@ void mouseMoveCallback(int x, int y) {
     glutPostRedisplay();  // Redesenha a cena para preview da linha
   }
 }
+
+void clickedMouseCallback() {}
 
 void saveToFile(const char* filename);
 
@@ -1495,6 +1512,7 @@ int main(int argc, char* argv[]) {
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutPassiveMotionFunc(mouseMoveCallback);
+  glutMotionFunc(clickedMouseCallback);
 
   if (shouldLoad) {
     loadFromFile(saveFile);
