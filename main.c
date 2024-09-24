@@ -1050,6 +1050,8 @@ void clickedMouseCallback() {}
 void saveToFile(const char* filename);
 
 void keyPress(unsigned char key, int x, int y) {
+
+
   if (key == '.' && shouldSave) {
     if (strlen(saveFile) > 0) {
       saveToFile(saveFile);
@@ -1285,6 +1287,12 @@ void keyPress(unsigned char key, int x, int y) {
     updatePolygonTransformationMatrix(selectedPolygon);
   }
 
+  if (currentMode == DRAW_POINT || currentMode == SELECT || currentMode == DRAW_LINE) {
+    tempPolygon.vertexCount = 0;
+  }
+  if (currentMode == DRAW_POINT || currentMode == SELECT || currentMode == DRAW_POLYGON) {
+    isDrawingLine = 0;
+  }
   glutPostRedisplay();  // Redesenha a cena para preview da linha
 }
 
