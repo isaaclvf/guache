@@ -807,9 +807,14 @@ LineNode* selectLine(int sx, int sy) {
       }
     }
     if (select) {
+      previousColor[0] = current->line.color[0];
+      previousColor[1] = current->line.color[1];
+      previousColor[2] = current->line.color[2];
+
       current->line.color[0] = 1.0;
       current->line.color[1] = 0.0;
       current->line.color[2] = 0.0;
+
       isAnythingSelected = 1;
       return current;
     }
@@ -851,10 +856,15 @@ PolygonNode* selectPolygon(int sx, int sy) {
     }
 
     if (walls % 2 != 0) {
+      previousColor[0] = current->polygon.color[0];
+      previousColor[1] = current->polygon.color[1];
+      previousColor[2] = current->polygon.color[2];
+
       current->polygon.color[0] = 1.0;
       current->polygon.color[1] = 0.0;
       current->polygon.color[2] = 0.0;
       isAnythingSelected = 1;
+
       return current;
     }
 
