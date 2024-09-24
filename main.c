@@ -108,24 +108,25 @@ PolygonList polygonList = {NULL};
 PointNode* selectedPoint = {NULL};
 LineNode* selectedLine = {NULL};
 PolygonNode* selectedPolygon = {NULL};
+
 int isAnythingSelected = 0;
+float previousColor[3] = {0.0f, 0.0f, 0.0f};
 
 void clearSelection() {
   if (selectedPoint != NULL) {
-    for (int i = 0; i < 2; i++) {
-      selectedPoint->point.color[i] = 0.0;
-    }
+    for (int i = 0; i < 3; i++)
+      selectedPoint->point.color[i] = previousColor[i];
   }
 
   if (selectedLine != NULL) {
-    for (int i = 0; i < 2; i++) {
-      selectedLine->line.color[i] = 0.0;
+    for (int i = 0; i < 3; i++) {
+      selectedLine->line.color[i] = previousColor[i];
     }
   }
 
   if (selectedPolygon != NULL) {
-    for (int i = 0; i < 2; i++) {
-      selectedPolygon->polygon.color[i] = 0.0;
+    for (int i = 0; i < 3; i++) {
+      selectedPolygon->polygon.color[i] = previousColor[i];
     }
   }
 
@@ -699,6 +700,10 @@ PointNode* selectPoint(int sx, int sy) {
         (current->point.x >= sx - tolerance) &&
         (current->point.y <= sy + tolerance) &&
         (current->point.y >= sy - tolerance)) {
+      previousColor[0] = current->point.color[0];
+      previousColor[1] = current->point.color[1];
+      previousColor[2] = current->point.color[2];
+
       current->point.color[0] = 1.0;
       current->point.color[1] = 0.0;
       current->point.color[2] = 0.0;
@@ -891,8 +896,6 @@ void display() {
     glVertex2f(currentMouseX, currentMouseY);
     glEnd();
   }
-
-  renderTestPolygon();
 
   glutSwapBuffers();
 
