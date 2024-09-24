@@ -552,40 +552,59 @@ void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
 }
 
 void removePointNode(PointNode* node) {
-  PointNode* prevNode = node->prev;
-  PointNode* nextNode = node->next;
-
-  if (!prevNode && !nextNode) {
-    pointList.head = NULL;
+  if (!node) {
+    return;
   }
 
-  if (prevNode) {
-    prevNode->next = node->next;
+  if (node == pointList.head) {
+    pointList.head = node->next;
+    if (pointList.head) {
+      pointList.head->prev = NULL;
+    }
+  } else {
+    if (node->prev) {
+      node->prev->next = node->next;
+    }
   }
 
-  if (nextNode) {
-    nextNode->prev = node->prev;
+  if (!node->next) {
+    if (node->prev) {
+      node->prev->next = NULL;
+    }
+  } else {
+    if (node->next) {
+      node->next->prev = node->prev;
+    }
   }
 
-  printf("Removendo o ponto\n");
   free(node);
   selectedPoint = NULL;
 }
 
 void removeLineNode(LineNode* node) {
-  LineNode* prevNode = node->prev;
-  LineNode* nextNode = node->next;
-
-  if (!prevNode && !nextNode) {
-    lineList.head = NULL;
+  if (!node) {
+    return;
   }
 
-  if (prevNode) {
-    prevNode->next = node->next;
+  if (node == lineList.head) {
+    lineList.head = node->next;
+    if (lineList.head) {
+      lineList.head->prev = NULL;
+    }
+  } else {
+    if (node->prev) {
+      node->prev->next = node->next;
+    }
   }
 
-  if (nextNode) {
-    nextNode->prev = node->prev;
+  if (!node->next) {
+    if (node->prev) {
+      node->prev->next = NULL;
+    }
+  } else {
+    if (node->next) {
+      node->next->prev = node->prev;
+    }
   }
 
   free(node);
@@ -593,19 +612,29 @@ void removeLineNode(LineNode* node) {
 }
 
 void removePolygonNode(PolygonNode* node) {
-  PolygonNode* prevNode = node->prev;
-  PolygonNode* nextNode = node->next;
-
-  if (!prevNode && !nextNode) {
-    polygonList.head = NULL;
+  if (!node) {
+    return;
   }
 
-  if (prevNode) {
-    prevNode->next = node->next;
+  if (node == polygonList.head) {
+    polygonList.head = node->next;
+    if (polygonList.head) {
+      polygonList.head->prev = NULL;
+    }
+  } else {
+    if (node->prev) {
+      node->prev->next = node->next;
+    }
   }
 
-  if (nextNode) {
-    nextNode->prev = node->prev;
+  if (!node->next) {
+    if (node->prev) {
+      node->prev->next = NULL;
+    }
+  } else {
+    if (node->next) {
+      node->next->prev = node->prev;
+    }
   }
 
   free(node);
