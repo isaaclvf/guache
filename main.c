@@ -1011,6 +1011,13 @@ void onMouseClick(int button, int state, int x, int y) {
           tempPolygon.vertexCount++;
         }
       }
+
+      if (tempPolygon.vertexCount == MAX_VERTICES) {
+        addPolygon(tempPolygon.vertices, tempPolygon.vertexCount,
+                   currentColor[0], currentColor[1], currentColor[1]);
+        // Começa a desenhar um novo
+        tempPolygon.vertexCount = 0;
+      }
     } else if (currentMode == SELECT) {
       if (isAnythingSelected != 0 || selectedPoint != NULL) {
         clearSelection();
