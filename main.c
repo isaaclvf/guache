@@ -113,7 +113,9 @@ LineNode    *selectedLine    = {NULL};
 PolygonNode *selectedPolygon = {NULL};
 
 int isAnythingSelected = 0;
-int isDragging         = 0;
+
+int   isDragging = 0;
+float dragStartX, dragStartY;
 
 float previousColor[3] = {0.0f, 0.0f, 0.0f};
 
@@ -1006,6 +1008,12 @@ void onMouseClick(int button, int state, int x, int y) {
     float worldX = x - ((float)windowWidth / 2);
     float worldY = -y + ((float)windowHeight / 2);
 
+    if (selectedPoint || selectedLine || selectedPolygon) {
+      isDragging = 1;
+      dragStartX = worldX;
+      dragStartY = worldY;
+    }
+
     if (currentMode == DRAW_POINT) {
       addPoint(worldX, worldY, currentColor[0], currentColor[1], currentColor[2], 5.0f);
     } else if (currentMode == DRAW_LINE) {
@@ -1062,9 +1070,10 @@ void onMouseClick(int button, int state, int x, int y) {
         }
       }
     }
-    // Redesenhar a janela
-    glutPostRedisplay();
+  } else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+    isDragging = 0;
   }
+  glutPostRedisplay();
 }
 
 void mouseMoveCallback(int x, int y) {
@@ -1072,6 +1081,36 @@ void mouseMoveCallback(int x, int y) {
     currentMouseX = x - ((float)windowWidth / 2);
     currentMouseY = -y + ((float)windowHeight / 2);
     glutPostRedisplay();  // Redesenha a cena para preview da linha
+  }
+}
+
+void mouseDragCallback(int x, int y) {
+  if (isDragging) {
+    float mouseX = x - ((float)windowWidth / 2);
+    float mouseY = -y + ((float)windowHeight / 2);
+
+    float dx = mouseX - dragStartX;
+    float dy = mouseY - dragStartY;
+
+    if (selectedPoint) {
+      selectedPoint->point.x += dx;
+      selectedPoint->point.y += dy;
+    } else if (selectedLine) {
+      selectedLine->line.x0 += dx;
+      selectedLine->line.y0 += dy;
+      selectedLine->line.x1 += dx;
+      selectedLine->line.y1 += dy;
+    } else if (selectedPolygon) {
+      for (int i = 0; i < selectedPolygon->polygon.vertexCount; i++) {
+        selectedPolygon->polygon.vertices[i][0] += dx;
+        selectedPolygon->polygon.vertices[i][1] += dy;
+      }
+    }
+
+    dragStartX = mouseX;
+    dragStartY = mouseY;
+
+    glutPostRedisplay();
   }
 }
 
@@ -1539,6 +1578,7 @@ int main(int argc, char *argv[]) {
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutPassiveMotionFunc(mouseMoveCallback);
+  glutMotionFunc(mouseDragCallback);
   glutTimerFunc(0, updateAnimation, 0);
   glutMainLoop();
 
