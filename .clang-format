@@ -1,0 +1,46 @@
+# Language: C++, C, JavaScript, Java, etc.
+# Define the style guide base.
+BasedOnStyle: Google
+
+# Alignment settings.
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignOperands: false
+AlignTrailingComments: true
+
+# Indentation settings.
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never # Options: Always, Never, ForIndentation
+
+# Braces and blocks style.
+BreakBeforeBraces: Attach # Options: Attach, Allman, Linux, Stroustrup, GNU
+
+# Formatting of function signatures.
+AllowShortFunctionsOnASingleLine: Inline # Options: None, Inline, Empty, InlineOnly
+AlwaysBreakBeforeMultilineStrings: true
+
+# Column limit (line length).
+ColumnLimit: 100
+
+# Pointer and reference style.
+PointerAlignment: Left # Options: Left, Right, Middle
+
+# Include sorting
+SortIncludes: true
+
+# Namespace settings.
+IndentNamespace: None # Options: None, Inner, All
+
+# Control flow statements.
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# Space around operators.
+SpaceBeforeParens: ControlStatements # Options: Never, Always, ControlStatements
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+
+# Others
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
