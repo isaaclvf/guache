@@ -1265,8 +1265,10 @@ void keyPress(unsigned char key, int x, int y) {
       printf("\e[1;32mAnimação\e[0m ligada.\n");
     }
   } else if (key != 'z') {
-    shouldRotate = 0;
-    printf("\e[1;32mAnimação\e[0m desligada.\n");
+    if (shouldRotate) {
+      printf("\e[1;32mAnimação\e[0m desligada.\n");
+      shouldRotate = 0;
+    }
   }
 
   updateCurrentColor(key);
