@@ -687,6 +687,14 @@ void renderAllPolygons() {
   PolygonNode *current = polygonList.head;
 
   while (current != NULL) {
+    // Solução temporária para não desenhar o polígono selecionado
+    // se estiver no modo animação. Se não tiver isso, é desenhado
+    // um polígono a mais (que fica parado) e outro que fica girando.
+    if (shouldRotate && current == selectedPolygon) {
+      current = current->next;
+      continue;
+    }
+
     glPushMatrix();
     glColor3f(current->polygon.color[0], current->polygon.color[1],
               current->polygon.color[2]);
@@ -1545,6 +1553,9 @@ void printInitialInfo() {
   printf("  i  \n");
   printf("j k l  -> Cisalhamento\n");
   printf("x y    -> Reflexão\n");
+  printf("\n");
+
+  printf("z      -> Rotacionar polígono selecionado\n");
   printf("\n");
 
   printf(".      -> Salvar em %s\n", saveFile);
