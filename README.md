@@ -4,14 +4,14 @@
 #### *Por Helen Christine Turbano, João Isaac Alves e Riquelme Jatay.*
 Guache é uma aplicação simples, mas robusta de pintura 2D, desenvolvida com OpenGL e GLUT. Ela permite aos usuários desenhar pontos, linhas e polígonos na tela, aplicar transformações, e salvar/carregar desenhos de arquivos. Este foi o primeiro projeto da disciplina de Computação Gráfica no curso de Ciência da Computação na Universidade Federal do Cariri.
 
-### Funcionalidades 🚀
+## Funcionalidades 🚀
 - **Desenhar Formas**: Crie pontos, linhas e polígonos com facilidade.
 - **Transformações**: Rotacione, escale e aplique cisalhamento nas formas.
 - **Seleção**: Clique para selecionar formas para manipulação.
 - **Salvar/Carregar**: Salve sua arte em arquivos e carregue-os de volta para edição.
 - **Animação**: Anime o polígono selecionado.
 
-### Instalação 💻
+## Instalação 💻
 Para começar a usar o Guache, siga os seguintes passos:
 
 1. **Clone o Repositório**:
@@ -42,7 +42,7 @@ Para começar a usar o Guache, siga os seguintes passos:
    ./guache save <nome_do_arquivo>
    ```
 
-### Controles ⌨️
+## Controles ⌨️
 
 - **Desenhar Ponto**: Pressione `v`
 - **Desenhar Linha**: Pressione `b`
@@ -66,7 +66,7 @@ Para começar a usar o Guache, siga os seguintes passos:
    - **Cisalhar**: `i` (direita), `j` (cima), `k` (esquerda), `l` (baixo)
    - **Refletir**: `x` (eixo x), `y` (eixo y)
 
-### Exemplo de Uso 💡
+## Exemplo de Uso 💡
 
 1. Abra a aplicação.
 2. Selecione o modo que deseja desenhar (ponto, linha, polígono).
