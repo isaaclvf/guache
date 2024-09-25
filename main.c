@@ -24,6 +24,9 @@ Mode currentMode = DRAW_POINT;
 
 float currentColor[] = {0.0f, 0.0f, 0.0f};
 
+float rotationAngle = 0.0f;
+int shouldRotate = 0;
+
 typedef struct {
   float matrix[16];
   float tx, ty;
@@ -948,6 +951,51 @@ void renderTestPolygon() {
   glEnd();
 }
 
+void updateAnimation(int value) {
+  // Incrementa o ângulo de rotação
+  rotationAngle += 2.0f; // Rotação de 2 graus por frame
+
+  // Limita o valor do ângulo a 360 graus
+  if (rotationAngle > 360.0f) {
+    rotationAngle -= 360.0f;
+  }
+
+  // Redesenha a tela após a atualização da animação
+  glutPostRedisplay();
+
+  // Chama novamente essa função após 16ms (~60fps)
+  glutTimerFunc(16, updateAnimation, 0);
+}
+
+void renderPolygonWithAnimation(Polygon *polygon) {
+  glPushMatrix(); // Salva a matriz atual
+
+  float centerX = 0.0f;
+  float centerY = 0.0f;
+
+  for (int i = 0; i < polygon->vertexCount; i++) {
+    centerX += polygon->vertices[i][0];
+    centerY += polygon->vertices[i][1];
+  }
+
+  centerX = centerX / polygon->vertexCount;
+  centerY = centerY / polygon->vertexCount;
+  glTranslatef(centerX, centerY, 0);
+
+  polygon->transformation.angle = rotationAngle;
+  glRotatef(polygon->transformation.angle, 0.0f, 0.0f, 1.0f);
+
+  glTranslatef(-centerX, -centerY, 0);
+
+  glBegin(GL_POLYGON);
+  for (int i = 0; i < polygon->vertexCount; i++) {
+    glVertex2f(polygon->vertices[i][0], polygon->vertices[i][1]);
+  }
+  glEnd();
+
+  glPopMatrix();
+}
+
 void display() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -963,6 +1011,10 @@ void display() {
     glVertex2f(tempLineX0, tempLineY0);
     glVertex2f(currentMouseX, currentMouseY);
     glEnd();
+  }
+
+  if (selectedPolygon != NULL && shouldRotate) {
+    renderPolygonWithAnimation(&selectedPolygon->polygon);
   }
 
   glutSwapBuffers();
@@ -1195,6 +1247,17 @@ void keyPress(unsigned char key, int x, int y) {
       removePolygonNode(selectedPolygon);
       isAnythingSelected = 0;
     }
+  } else if (key == 'z') {
+    if (shouldRotate) {
+      shouldRotate = 0;
+      printf("\e[1;32mAnimação\e[0m desligada.\n");
+    } else {
+      shouldRotate = 1;
+      printf("\e[1;32mAnimação\e[0m ligada.\n");
+    }
+  } else if (key != 'z') {
+    shouldRotate = 0;
+    printf("\e[1;32mAnimação\e[0m desligada.\n");
   }
 
   updateCurrentColor(key);
@@ -1525,6 +1588,7 @@ int main(int argc, char *argv[]) {
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutPassiveMotionFunc(mouseMoveCallback);
+  glutTimerFunc(0, updateAnimation, 0);
   glutMainLoop();
 
   return EXIT_SUCCESS;
