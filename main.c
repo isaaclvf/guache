@@ -15,8 +15,8 @@ int windowWidth = 800;
 int windowHeight = 600;
 float tolerance = 5.0;
 
-char saveFile[256] = "";  // Nome do arquivo para salvar
-int shouldSave = 0;  // Flag que indica se o programa vai salvar em um arquivo
+char saveFile[256] = ""; // Nome do arquivo para salvar
+int shouldSave = 0; // Flag que indica se o programa vai salvar em um arquivo
 int shouldLoad = 0;
 
 typedef enum { DRAW_POINT, DRAW_LINE, DRAW_POLYGON, SELECT } Mode;
@@ -36,16 +36,16 @@ typedef struct {
 
 typedef struct {
   float x, y;
-  float color[3];  // RGB
+  float color[3]; // RGB
   float size;
 
   Transformation transformation;
 } Point;
 
 typedef struct {
-  float x0, y0;    // Start
-  float x1, y1;    // End
-  float color[3];  // RGB
+  float x0, y0;   // Start
+  float x1, y1;   // End
+  float color[3]; // RGB
   float width;
 
   Transformation transformation;
@@ -53,8 +53,8 @@ typedef struct {
 
 typedef struct {
   int vertexCount;
-  float vertices[MAX_VERTICES][2];  // Coordenadas dos vertices
-  float color[3];                   // RGB
+  float vertices[MAX_VERTICES][2]; // Coordenadas dos vertices
+  float color[3];                  // RGB
 
   Transformation transformation;
 } Polygon;
@@ -73,41 +73,41 @@ int isDrawingPolygon = 0;
 
 typedef struct PointNode {
   Point point;
-  struct PointNode* next;
-  struct PointNode* prev;
+  struct PointNode *next;
+  struct PointNode *prev;
 } PointNode;
 
 typedef struct LineNode {
   Line line;
-  struct LineNode* next;
-  struct LineNode* prev;
+  struct LineNode *next;
+  struct LineNode *prev;
 } LineNode;
 
 typedef struct PolygonNode {
   Polygon polygon;
-  struct PolygonNode* next;
-  struct PolygonNode* prev;
+  struct PolygonNode *next;
+  struct PolygonNode *prev;
 } PolygonNode;
 
 typedef struct PointList {
-  PointNode* head;
+  PointNode *head;
 } PointList;
 
 typedef struct LineList {
-  LineNode* head;
+  LineNode *head;
 } LineList;
 
 typedef struct PolygonList {
-  PolygonNode* head;
+  PolygonNode *head;
 } PolygonList;
 
 PointList pointList = {NULL};
 LineList lineList = {NULL};
 PolygonList polygonList = {NULL};
 
-PointNode* selectedPoint = {NULL};
-LineNode* selectedLine = {NULL};
-PolygonNode* selectedPolygon = {NULL};
+PointNode *selectedPoint = {NULL};
+LineNode *selectedLine = {NULL};
+PolygonNode *selectedPolygon = {NULL};
 
 int isAnythingSelected = 0;
 int isDragging = 0;
@@ -140,7 +140,7 @@ void clearSelection() {
 
 void addPoint(float x, float y, float red, float green, float blue,
               float size) {
-  PointNode* newNode = (PointNode*)malloc(sizeof(PointNode));
+  PointNode *newNode = (PointNode *)malloc(sizeof(PointNode));
 
   newNode->point.x = x;
   newNode->point.y = y;
@@ -165,7 +165,7 @@ void addPoint(float x, float y, float red, float green, float blue,
   glGetFloatv(GL_MODELVIEW_MATRIX, newNode->point.transformation.matrix);
   glPopMatrix();
 
-  PointNode* oldHead = pointList.head;
+  PointNode *oldHead = pointList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -175,8 +175,8 @@ void addPoint(float x, float y, float red, float green, float blue,
   pointList.head = newNode;
 }
 
-void addPointNode(PointNode* newNode) {
-  PointNode* oldHead = pointList.head;
+void addPointNode(PointNode *newNode) {
+  PointNode *oldHead = pointList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -188,7 +188,7 @@ void addPointNode(PointNode* newNode) {
 
 void addLine(float x0, float y0, float x1, float y1, float red, float green,
              float blue) {
-  LineNode* newNode = (LineNode*)malloc(sizeof(LineNode));
+  LineNode *newNode = (LineNode *)malloc(sizeof(LineNode));
 
   newNode->line.x0 = x0;
   newNode->line.y0 = y0;
@@ -214,7 +214,7 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   glGetFloatv(GL_MODELVIEW_MATRIX, newNode->line.transformation.matrix);
   glPopMatrix();
 
-  LineNode* oldHead = lineList.head;
+  LineNode *oldHead = lineList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -224,8 +224,8 @@ void addLine(float x0, float y0, float x1, float y1, float red, float green,
   lineList.head = newNode;
 }
 
-void addLineNode(LineNode* newNode) {
-  LineNode* oldHead = lineList.head;
+void addLineNode(LineNode *newNode) {
+  LineNode *oldHead = lineList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -242,7 +242,7 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
     return;
   }
 
-  PolygonNode* newNode = (PolygonNode*)malloc(sizeof(PolygonNode));
+  PolygonNode *newNode = (PolygonNode *)malloc(sizeof(PolygonNode));
 
   newNode->polygon.vertexCount = vertexCount;
   for (int i = 0; i < vertexCount; i++) {
@@ -270,7 +270,7 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   glGetFloatv(GL_MODELVIEW_MATRIX, newNode->polygon.transformation.matrix);
   glPopMatrix();
 
-  PolygonNode* oldHead = polygonList.head;
+  PolygonNode *oldHead = polygonList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -280,8 +280,8 @@ void addPolygon(float vertices[][2], int vertexCount, float red, float green,
   polygonList.head = newNode;
 }
 
-void addPolygonNode(PolygonNode* newNode) {
-  PolygonNode* oldHead = polygonList.head;
+void addPolygonNode(PolygonNode *newNode) {
+  PolygonNode *oldHead = polygonList.head;
 
   if (oldHead) {
     oldHead->prev = newNode;
@@ -291,7 +291,7 @@ void addPolygonNode(PolygonNode* newNode) {
   polygonList.head = newNode;
 }
 
-void debugTransformation(Transformation* t) {
+void debugTransformation(Transformation *t) {
   if (!t) {
     printf("Erro: A transformação é NULL.\n");
     return;
@@ -316,7 +316,7 @@ void debugTransformation(Transformation* t) {
          t->reflectY);
 }
 
-void debugPoint(PointNode* pointNode) {
+void debugPoint(PointNode *pointNode) {
   if (!pointNode) {
     printf("Erro: O PointNode é NULL.\n");
     return;
@@ -333,7 +333,7 @@ void debugPoint(PointNode* pointNode) {
   printf("\n");
 }
 
-void debugLine(LineNode* lineNode) {
+void debugLine(LineNode *lineNode) {
   if (!lineNode) {
     printf("Erro: O LineNode é NULL.\n");
     return;
@@ -350,7 +350,7 @@ void debugLine(LineNode* lineNode) {
   printf("\n");
 }
 
-void debugPolygon(PolygonNode* polygonNode) {
+void debugPolygon(PolygonNode *polygonNode) {
   if (!polygonNode) {
     printf("Erro: O PolygonNode é NULL.\n");
     return;
@@ -373,26 +373,26 @@ void debugPolygon(PolygonNode* polygonNode) {
 }
 
 void verifyLoadedObjects() {
-  PointNode* currentPoint = pointList.head;
+  PointNode *currentPoint = pointList.head;
   while (currentPoint) {
     debugPoint(currentPoint);
     currentPoint = currentPoint->next;
   }
 
-  LineNode* currentLine = lineList.head;
+  LineNode *currentLine = lineList.head;
   while (currentLine) {
     debugLine(currentLine);
     currentLine = currentLine->next;
   }
 
-  PolygonNode* currentPolygon = polygonList.head;
+  PolygonNode *currentPolygon = polygonList.head;
   while (currentPolygon) {
     debugPolygon(currentPolygon);
     currentPolygon = currentPolygon->next;
   }
 }
 
-void updatePointTransformationMatrix(PointNode* pointNode) {
+void updatePointTransformationMatrix(PointNode *pointNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
@@ -439,7 +439,7 @@ void updatePointTransformationMatrix(PointNode* pointNode) {
   glGetFloatv(GL_MODELVIEW_MATRIX, pointNode->point.transformation.matrix);
 }
 
-void updateLineTransformationMatrix(LineNode* lineNode) {
+void updateLineTransformationMatrix(LineNode *lineNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
@@ -491,7 +491,7 @@ void updateLineTransformationMatrix(LineNode* lineNode) {
   glGetFloatv(GL_MODELVIEW_MATRIX, lineNode->line.transformation.matrix);
 }
 
-void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
+void updatePolygonTransformationMatrix(PolygonNode *polygonNode) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
@@ -551,7 +551,7 @@ void updatePolygonTransformationMatrix(PolygonNode* polygonNode) {
   glGetFloatv(GL_MODELVIEW_MATRIX, polygonNode->polygon.transformation.matrix);
 }
 
-void removePointNode(PointNode* node) {
+void removePointNode(PointNode *node) {
   if (!node) {
     return;
   }
@@ -581,7 +581,7 @@ void removePointNode(PointNode* node) {
   selectedPoint = NULL;
 }
 
-void removeLineNode(LineNode* node) {
+void removeLineNode(LineNode *node) {
   if (!node) {
     return;
   }
@@ -611,7 +611,7 @@ void removeLineNode(LineNode* node) {
   selectedLine = NULL;
 }
 
-void removePolygonNode(PolygonNode* node) {
+void removePolygonNode(PolygonNode *node) {
   if (!node) {
     return;
   }
@@ -642,7 +642,7 @@ void removePolygonNode(PolygonNode* node) {
 }
 
 void renderAllPoints() {
-  PointNode* current = pointList.head;
+  PointNode *current = pointList.head;
 
   while (current != NULL) {
     glPointSize(5.0f);
@@ -661,7 +661,7 @@ void renderAllPoints() {
 }
 
 void renderAllLines() {
-  LineNode* current = lineList.head;
+  LineNode *current = lineList.head;
 
   while (current != NULL) {
     glLoadMatrixf(current->line.transformation.matrix);
@@ -679,7 +679,7 @@ void renderAllLines() {
 }
 
 void renderAllPolygons() {
-  PolygonNode* current = polygonList.head;
+  PolygonNode *current = polygonList.head;
 
   while (current != NULL) {
     glPushMatrix();
@@ -713,27 +713,27 @@ void renderAllPolygons() {
 }
 
 void freePointList() {
-  PointNode* current = pointList.head;
+  PointNode *current = pointList.head;
   while (current != NULL) {
-    PointNode* next = current->next;
+    PointNode *next = current->next;
     free(current);
     current = next;
   }
 }
 
 void freeLineList() {
-  LineNode* current = lineList.head;
+  LineNode *current = lineList.head;
   while (current != NULL) {
-    LineNode* next = current->next;
+    LineNode *next = current->next;
     free(current);
     current = next;
   }
 }
 
 void freePolygonList() {
-  PolygonNode* current = polygonList.head;
+  PolygonNode *current = polygonList.head;
   while (current != NULL) {
-    PolygonNode* next = current->next;
+    PolygonNode *next = current->next;
     free(current);
     current = next;
   }
@@ -741,8 +741,8 @@ void freePolygonList() {
 
 // selection algorithms
 
-PointNode* selectPoint(int sx, int sy) {
-  PointNode* current = pointList.head;
+PointNode *selectPoint(int sx, int sy) {
+  PointNode *current = pointList.head;
 
   while (current != NULL) {
     if ((current->point.x <= sx + tolerance) &&
@@ -775,8 +775,8 @@ int auxSelectLine(float x, float y, float X, float Y) {
   return 0;
 }
 
-LineNode* selectLine(int sx, int sy) {
-  LineNode* current = lineList.head;
+LineNode *selectLine(int sx, int sy) {
+  LineNode *current = lineList.head;
 
   int xmax = sx + tolerance, xmin = sx - tolerance, ymax = sy + tolerance,
       ymin = sy - tolerance;
@@ -872,8 +872,8 @@ LineNode* selectLine(int sx, int sy) {
   return NULL;
 }
 
-PolygonNode* selectPolygon(int sx, int sy) {
-  PolygonNode* current = polygonList.head;
+PolygonNode *selectPolygon(int sx, int sy) {
+  PolygonNode *current = polygonList.head;
   float x1, y1, x0, y0;
   int walls;
 
@@ -923,15 +923,23 @@ PolygonNode* selectPolygon(int sx, int sy) {
   return NULL;
 }
 
+void loadFromFile(const char *filename);
+
 void init() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
   glMatrixMode(GL_PROJECTION);
   gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f);
+
+  if (shouldLoad) {
+    printf("[DEBUG] Cheguei aqui\n");
+    loadFromFile(saveFile);
+    shouldLoad = 0; // Carrega apenas uma vez
+  }
 }
 
 void renderTestPolygon() {
-  glColor3f(1.0f, 0.0f, 0.0f);  // Vermelho
+  glColor3f(1.0f, 0.0f, 0.0f); // Vermelho
   glBegin(GL_TRIANGLES);
   glVertex2f(0.0f, 100.0f);
   glVertex2f(-50.0f, -50.0f);
@@ -943,9 +951,9 @@ void display() {
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  renderAllPoints();
-  renderAllLines();
   renderAllPolygons();
+  renderAllLines();
+  renderAllPoints();
 
   // Se estiver no processo de desenhar uma linha, mostrar um preview
   if (isDrawingLine) {
@@ -957,19 +965,13 @@ void display() {
   }
 
   glutSwapBuffers();
-
-  GLenum err;
-  while ((err = glGetError()) != GL_NO_ERROR) {
-    printf("OpenGL error: %d\n", err);
-  }
-
   verifyLoadedObjects();
 }
 
 // Usado para fechar o polígono
 int isCloseToFirstPoint(float x, float y) {
   if (tempPolygon.vertexCount == 0)
-    return 0;  // Nenhum vértice ainda
+    return 0; // Nenhum vértice ainda
   float dx = x - tempPolygon.vertices[0][0];
   float dy = y - tempPolygon.vertices[0][1];
   return sqrt(dx * dx + dy * dy) < tolerance;
@@ -1006,7 +1008,7 @@ void onMouseClick(int button, int state, int x, int y) {
       if (tempPolygon.vertexCount < MAX_VERTICES) {
         if (isCloseToFirstPoint(worldX, worldY) &&
             tempPolygon.vertexCount > 2) {
-              glPushMatrix();
+          glPushMatrix();
           addPolygon(tempPolygon.vertices, tempPolygon.vertexCount,
                      currentColor[0], currentColor[1], currentColor[2]);
           isDrawingPolygon = 0;
@@ -1048,25 +1050,23 @@ void mouseMoveCallback(int x, int y) {
   if (isDrawingLine) {
     currentMouseX = x - ((float)windowWidth / 2);
     currentMouseY = -y + ((float)windowHeight / 2);
-    glutPostRedisplay();  // Redesenha a cena para preview da linha
+    glutPostRedisplay(); // Redesenha a cena para preview da linha
   }
 }
 
 void clickedMouseCallback() {}
 
-void saveToFile(const char* filename);
+void saveToFile(const char *filename);
 
 void keyPress(unsigned char key, int x, int y) {
-
 
   if (key == '.' && shouldSave) {
     if (strlen(saveFile) > 0) {
       saveToFile(saveFile);
       printf("Salvo em %s\n", saveFile);
     } else {
-      printf(
-          "Nenhum arquivo especificado. Use --save para especificar um "
-          "arquivo.\n");
+      printf("Nenhum arquivo especificado. Use --save para especificar um "
+             "arquivo.\n");
     }
 
   } else if (key == 'v') {
@@ -1106,90 +1106,90 @@ void keyPress(unsigned char key, int x, int y) {
   }
 
   switch (key) {
-    case '1':
-      currentColor[0] = 0.0f;
-      currentColor[1] = 0.0f;
-      currentColor[2] = 0.0f;
-      break;
-    case '2':
-      currentColor[0] = 1.0f;
-      currentColor[1] = 0.0f;
-      currentColor[2] = 0.0f;
-      break;
-    case '3':
-      currentColor[0] = 0.0f;
-      currentColor[1] = 1.0f;
-      currentColor[2] = 0.0f;
-      break;
-    case '4':
-      currentColor[0] = 0.0f;
-      currentColor[1] = 0.0f;
-      currentColor[2] = 1.0f;
-      break;
-    case '5':
-      currentColor[0] = 1.0f;
-      currentColor[1] = 1.0f;
-      currentColor[2] = 0.0f;
-      break;
-    case '6':
-      currentColor[0] = 1.0f;
-      currentColor[1] = 0.0f;
-      currentColor[2] = 1.0f;
-      break;
-    case '7':
-      currentColor[0] = 0.0f;
-      currentColor[1] = 1.0f;
-      currentColor[2] = 1.0f;
-      break;
+  case '1':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 0.0f;
+    break;
+  case '2':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 0.0f;
+    break;
+  case '3':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 0.0f;
+    break;
+  case '4':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 1.0f;
+    break;
+  case '5':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 0.0f;
+    break;
+  case '6':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 1.0f;
+    break;
+  case '7':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 1.0f;
+    break;
   }
 
   if (selectedPoint) {
     switch (key) {
-      case 'q':
+    case 'q':
       glPushMatrix();
-        selectedPoint->point.transformation.angle += 5.0f;
-        break;
-      case 'e':
-        selectedPoint->point.transformation.angle -= 5.0f;
-        break;
-      case 'w':
-        selectedPoint->point.transformation.ty += 5.0f;
-        break;
-      case 's':
-        selectedPoint->point.transformation.ty -= 5.0f;
-        break;
-      case 'a':
-        selectedPoint->point.transformation.tx -= 5.0f;
-        break;
-      case 'd':
-        selectedPoint->point.transformation.tx += 5.0f;
-        break;
-      case '+':
-        selectedPoint->point.transformation.scale += 0.1f;
-        break;
-      case '-':
-        selectedPoint->point.transformation.scale -= 0.1f;
-        break;
-      case 'i':
-        selectedPoint->point.transformation.shearX += 0.05f;
-        break;
-      case 'k':
-        selectedPoint->point.transformation.shearX -= 0.05f;
-        break;
-      case 'j':
-        selectedPoint->point.transformation.shearY += 0.05f;
-        break;
-      case 'l':
-        selectedPoint->point.transformation.shearY -= 0.05f;
-        break;
-      case 'x':
-        selectedPoint->point.transformation.reflectX =
-            !selectedPoint->point.transformation.reflectX;
-        break;
-      case 'y':
-        selectedPoint->point.transformation.reflectY =
-            !selectedPoint->point.transformation.reflectY;
-        break;
+      selectedPoint->point.transformation.angle += 5.0f;
+      break;
+    case 'e':
+      selectedPoint->point.transformation.angle -= 5.0f;
+      break;
+    case 'w':
+      selectedPoint->point.transformation.ty += 5.0f;
+      break;
+    case 's':
+      selectedPoint->point.transformation.ty -= 5.0f;
+      break;
+    case 'a':
+      selectedPoint->point.transformation.tx -= 5.0f;
+      break;
+    case 'd':
+      selectedPoint->point.transformation.tx += 5.0f;
+      break;
+    case '+':
+      selectedPoint->point.transformation.scale += 0.1f;
+      break;
+    case '-':
+      selectedPoint->point.transformation.scale -= 0.1f;
+      break;
+    case 'i':
+      selectedPoint->point.transformation.shearX += 0.05f;
+      break;
+    case 'k':
+      selectedPoint->point.transformation.shearX -= 0.05f;
+      break;
+    case 'j':
+      selectedPoint->point.transformation.shearY += 0.05f;
+      break;
+    case 'l':
+      selectedPoint->point.transformation.shearY -= 0.05f;
+      break;
+    case 'x':
+      selectedPoint->point.transformation.reflectX =
+          !selectedPoint->point.transformation.reflectX;
+      break;
+    case 'y':
+      selectedPoint->point.transformation.reflectY =
+          !selectedPoint->point.transformation.reflectY;
+      break;
     }
 
     updatePointTransformationMatrix(selectedPoint);
@@ -1197,100 +1197,100 @@ void keyPress(unsigned char key, int x, int y) {
 
   if (selectedLine) {
     switch (key) {
-      case 'q':
-        selectedLine->line.transformation.angle += 5.0f;
-        break;
-      case 'e':
-        selectedLine->line.transformation.angle -= 5.0f;
-        break;
-      case 'w':
-        selectedLine->line.transformation.ty += 5.0f;
-        break;
-      case 's':
-        selectedLine->line.transformation.ty -= 5.0f;
-        break;
-      case 'a':
-        selectedLine->line.transformation.tx -= 5.0f;
-        break;
-      case 'd':
-        selectedLine->line.transformation.tx += 5.0f;
-        break;
-      case '+':
-        selectedLine->line.transformation.scale += 0.1f;
-        break;
-      case '-':
-        selectedLine->line.transformation.scale -= 0.1f;
-        break;
-      case 'i':
-        selectedLine->line.transformation.shearX += 0.05f;
-        break;
-      case 'k':
-        selectedLine->line.transformation.shearX -= 0.05f;
-        break;
-      case 'j':
-        selectedLine->line.transformation.shearY += 0.05f;
-        break;
-      case 'l':
-        selectedLine->line.transformation.shearY -= 0.05f;
-        break;
-      case 'x':
-        selectedLine->line.transformation.reflectX =
-            !selectedLine->line.transformation.reflectX;
-        break;
-      case 'y':
-        selectedLine->line.transformation.reflectY =
-            !selectedLine->line.transformation.reflectY;
-        break;
+    case 'q':
+      selectedLine->line.transformation.angle += 5.0f;
+      break;
+    case 'e':
+      selectedLine->line.transformation.angle -= 5.0f;
+      break;
+    case 'w':
+      selectedLine->line.transformation.ty += 5.0f;
+      break;
+    case 's':
+      selectedLine->line.transformation.ty -= 5.0f;
+      break;
+    case 'a':
+      selectedLine->line.transformation.tx -= 5.0f;
+      break;
+    case 'd':
+      selectedLine->line.transformation.tx += 5.0f;
+      break;
+    case '+':
+      selectedLine->line.transformation.scale += 0.1f;
+      break;
+    case '-':
+      selectedLine->line.transformation.scale -= 0.1f;
+      break;
+    case 'i':
+      selectedLine->line.transformation.shearX += 0.05f;
+      break;
+    case 'k':
+      selectedLine->line.transformation.shearX -= 0.05f;
+      break;
+    case 'j':
+      selectedLine->line.transformation.shearY += 0.05f;
+      break;
+    case 'l':
+      selectedLine->line.transformation.shearY -= 0.05f;
+      break;
+    case 'x':
+      selectedLine->line.transformation.reflectX =
+          !selectedLine->line.transformation.reflectX;
+      break;
+    case 'y':
+      selectedLine->line.transformation.reflectY =
+          !selectedLine->line.transformation.reflectY;
+      break;
     }
     updateLineTransformationMatrix(selectedLine);
   }
 
   if (selectedPolygon) {
     switch (key) {
-      case 'q':
-        selectedPolygon->polygon.transformation.angle += 5.0f;
-        break;
-      case 'e':
-        selectedPolygon->polygon.transformation.angle -= 5.0f;
-        break;
-      case 'w':
-        selectedPolygon->polygon.transformation.ty += 5.0f;
-        break;
-      case 's':
-        selectedPolygon->polygon.transformation.ty -= 5.0f;
-        break;
-      case 'a':
-        selectedPolygon->polygon.transformation.tx -= 5.0f;
-        break;
-      case 'd':
-        selectedPolygon->polygon.transformation.tx += 5.0f;
-        break;
-      case '+':
-        selectedPolygon->polygon.transformation.scale += 0.1f;
-        break;
-      case '-':
-        selectedPolygon->polygon.transformation.scale -= 0.1f;
-        break;
-      case 'i':
-        selectedPolygon->polygon.transformation.shearX += 0.05f;
-        break;
-      case 'k':
-        selectedPolygon->polygon.transformation.shearX -= 0.05f;
-        break;
-      case 'j':
-        selectedPolygon->polygon.transformation.shearY += 0.05f;
-        break;
-      case 'l':
-        selectedPolygon->polygon.transformation.shearY -= 0.05f;
-        break;
-      case 'x':
-        selectedPolygon->polygon.transformation.reflectX =
-            !selectedPolygon->polygon.transformation.reflectX;
-        break;
-      case 'y':
-        selectedPolygon->polygon.transformation.reflectY =
-            !selectedPolygon->polygon.transformation.reflectY;
-        break;
+    case 'q':
+      selectedPolygon->polygon.transformation.angle += 5.0f;
+      break;
+    case 'e':
+      selectedPolygon->polygon.transformation.angle -= 5.0f;
+      break;
+    case 'w':
+      selectedPolygon->polygon.transformation.ty += 5.0f;
+      break;
+    case 's':
+      selectedPolygon->polygon.transformation.ty -= 5.0f;
+      break;
+    case 'a':
+      selectedPolygon->polygon.transformation.tx -= 5.0f;
+      break;
+    case 'd':
+      selectedPolygon->polygon.transformation.tx += 5.0f;
+      break;
+    case '+':
+      selectedPolygon->polygon.transformation.scale += 0.1f;
+      break;
+    case '-':
+      selectedPolygon->polygon.transformation.scale -= 0.1f;
+      break;
+    case 'i':
+      selectedPolygon->polygon.transformation.shearX += 0.05f;
+      break;
+    case 'k':
+      selectedPolygon->polygon.transformation.shearX -= 0.05f;
+      break;
+    case 'j':
+      selectedPolygon->polygon.transformation.shearY += 0.05f;
+      break;
+    case 'l':
+      selectedPolygon->polygon.transformation.shearY -= 0.05f;
+      break;
+    case 'x':
+      selectedPolygon->polygon.transformation.reflectX =
+          !selectedPolygon->polygon.transformation.reflectX;
+      break;
+    case 'y':
+      selectedPolygon->polygon.transformation.reflectY =
+          !selectedPolygon->polygon.transformation.reflectY;
+      break;
     }
 
     glPushMatrix();
@@ -1298,28 +1298,32 @@ void keyPress(unsigned char key, int x, int y) {
     glPopMatrix();
   }
 
-  if (currentMode == DRAW_POINT || currentMode == SELECT || currentMode == DRAW_LINE) {
+  if (currentMode == DRAW_POINT || currentMode == SELECT ||
+      currentMode == DRAW_LINE) {
     tempPolygon.vertexCount = 0;
   }
-  if (currentMode == DRAW_POINT || currentMode == SELECT || currentMode == DRAW_POLYGON) {
+  if (currentMode == DRAW_POINT || currentMode == SELECT ||
+      currentMode == DRAW_POLYGON) {
     isDrawingLine = 0;
   }
-  glutPostRedisplay();  // Redesenha a cena para preview da linha
+  glutPostRedisplay(); // Redesenha a cena para preview da linha
 }
 
-void saveToFile(const char* filename) {
-  FILE* file = fopen(filename, "w");
+void saveToFile(const char *filename) {
+  FILE *file = fopen(filename, "w");
   if (file == NULL) {
     printf("Erro: Não foi possível abrir o arquivo para salvar.\n");
     return;
   }
 
-  PointNode* currentPoint = pointList.head;
+  PointNode *currentPoint = pointList.head;
   while (currentPoint != NULL) {
-    fprintf(file, "point %f %f %f %f %f %f ", currentPoint->point.x,
-            currentPoint->point.y, currentPoint->point.color[0],
-            currentPoint->point.color[1], currentPoint->point.color[2],
-            currentPoint->point.size);
+    float xn = currentPoint->point.x / 400.0f;
+    float yn = currentPoint->point.y / 300.0f;
+
+    fprintf(file, "point %f %f %f %f %f %f ", xn, yn,
+            currentPoint->point.color[0], currentPoint->point.color[1],
+            currentPoint->point.color[2], currentPoint->point.size);
 
     for (int i = 0; i < 16; i++) {
       fprintf(file, "%f ", currentPoint->point.transformation.matrix[i]);
@@ -1338,10 +1342,14 @@ void saveToFile(const char* filename) {
     currentPoint = currentPoint->next;
   }
 
-  LineNode* currentLine = lineList.head;
+  LineNode *currentLine = lineList.head;
   while (currentLine != NULL) {
-    fprintf(file, "line %f %f %f %f %f %f %f ", currentLine->line.x0,
-            currentLine->line.y0, currentLine->line.x1, currentLine->line.y1,
+    float xn0 = currentLine->line.x0 / 400.0f;
+    float yn0 = currentLine->line.y0 / 300.0f;
+    float xn1 = currentLine->line.x1 / 400.0f;
+    float yn1 = currentLine->line.y1 / 300.0f;
+
+    fprintf(file, "line %f %f %f %f %f %f %f ", xn0, yn0, xn1, yn1,
             currentLine->line.color[0], currentLine->line.color[1],
             currentLine->line.color[2]);
 
@@ -1362,7 +1370,7 @@ void saveToFile(const char* filename) {
     currentLine = currentLine->next;
   }
 
-  PolygonNode* currentPolygon = polygonList.head;
+  PolygonNode *currentPolygon = polygonList.head;
   while (currentPolygon != NULL) {
     fprintf(file, "polygon %f %f %f %d ", currentPolygon->polygon.color[0],
             currentPolygon->polygon.color[1], currentPolygon->polygon.color[2],
@@ -1397,7 +1405,7 @@ void saveToFile(const char* filename) {
 }
 
 // Função auxiliar para carregar a transformação
-void loadTransformation(Transformation* transformation, char* line) {
+void loadTransformation(Transformation *transformation, char *line) {
   sscanf(
       line,
       "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d",
@@ -1414,24 +1422,53 @@ void loadTransformation(Transformation* transformation, char* line) {
       &transformation->reflectX, &transformation->reflectY);
 }
 
-void loadFromFile(const char* filename) {
-  FILE* file = fopen(filename, "r");
+void recalculateAllTransformations() {
+  PointNode *pointNode = pointList.head;
+  while (pointNode != NULL) {
+    updatePointTransformationMatrix(pointNode);
+    pointNode = pointNode->next;
+  }
+
+  LineNode *lineNode = lineList.head;
+  while (lineNode != NULL) {
+    updateLineTransformationMatrix(lineNode);
+    lineNode = lineNode->next;
+  }
+
+  PolygonNode *polygonNode = polygonList.head;
+  while (polygonNode != NULL) {
+    updatePolygonTransformationMatrix(polygonNode);
+    polygonNode = polygonNode->next;
+  }
+}
+
+void resetProjection() {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f); // Sua área de visualização
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void loadFromFile(const char *filename) {
+  FILE *file = fopen(filename, "r");
   if (!file) {
     printf("Erro: Não foi possível carregar o arquivo %s.\n", filename);
     return;
   }
 
-  char line[512];  // Aumentei o tamanho do buffer para lidar com linhas maiores
+  char line[512]; // Aumentei o tamanho do buffer para lidar com linhas maiores
   while (fgets(line, sizeof(line), file)) {
     if (strncmp(line, "point", 5) == 0) {
-      PointNode* newPointNode = (PointNode*)malloc(sizeof(PointNode));
+      PointNode *newPointNode = (PointNode *)malloc(sizeof(PointNode));
       int offset;
+      float x_normalized, y_normalized;
 
-      sscanf(line, "point %f %f %f %f %f %f%n", &newPointNode->point.x,
-             &newPointNode->point.y, &newPointNode->point.color[0],
-             &newPointNode->point.color[1], &newPointNode->point.color[2],
-             &newPointNode->point.size, &offset);
+      sscanf(line, "point %f %f %f %f %f %f%n", &x_normalized, &y_normalized,
+             &newPointNode->point.color[0], &newPointNode->point.color[1],
+             &newPointNode->point.color[2], &newPointNode->point.size, &offset);
 
+      newPointNode->point.x = x_normalized * 400.0f;
+      newPointNode->point.y = y_normalized * 300.0f;
       // Carregar a transformação usando o offset retornado pelo sscanf
       loadTransformation(&newPointNode->point.transformation, line + offset);
 
@@ -1439,14 +1476,18 @@ void loadFromFile(const char* filename) {
       addPointNode(newPointNode);
 
     } else if (strncmp(line, "line", 4) == 0) {
-      LineNode* newLineNode = (LineNode*)malloc(sizeof(LineNode));
+      LineNode *newLineNode = (LineNode *)malloc(sizeof(LineNode));
       int offset;
+      float xn0, yn0, xn1, yn1;
 
-      sscanf(line, "line %f %f %f %f %f %f %f%n", &newLineNode->line.x0,
-             &newLineNode->line.y0, &newLineNode->line.x1,
-             &newLineNode->line.y1, &newLineNode->line.color[0],
-             &newLineNode->line.color[1], &newLineNode->line.color[2], &offset);
+      sscanf(line, "line %f %f %f %f %f %f %f%n", &xn0, &yn0, &xn1, &yn1,
+             &newLineNode->line.color[0], &newLineNode->line.color[1],
+             &newLineNode->line.color[2], &offset);
 
+      newLineNode->line.x0 = xn0 * 400.0f;
+      newLineNode->line.y0 = yn0 * 300.0f;
+      newLineNode->line.x1 = xn1 * 400.0f;
+      newLineNode->line.y1 = yn1 * 300.0f;
       // Carregar a transformação
       loadTransformation(&newLineNode->line.transformation, line + offset);
 
@@ -1454,9 +1495,9 @@ void loadFromFile(const char* filename) {
       addLineNode(newLineNode);
 
     } else if (strncmp(line, "polygon", 7) == 0) {
-      PolygonNode* newPolygonNode = (PolygonNode*)malloc(sizeof(PolygonNode));
+      PolygonNode *newPolygonNode = (PolygonNode *)malloc(sizeof(PolygonNode));
       int vertexCount;
-      int offset = 0;  // Número de caracteres lidos
+      int offset = 0; // Número de caracteres lidos
 
       sscanf(line, "polygon %f %f %f %d%n", &newPolygonNode->polygon.color[0],
              &newPolygonNode->polygon.color[1],
@@ -1464,22 +1505,28 @@ void loadFromFile(const char* filename) {
       newPolygonNode->polygon.vertexCount = vertexCount;
 
       // Ler coordenadas de vértices
-      char* vertexData =
-          line + offset;  // Pula a parte inicial para pegar os vértices
+      char *vertexData =
+          line + offset; // Pula a parte inicial para pegar os vértices
       for (int i = 0; i < vertexCount; i++) {
         float x_normalized, y_normalized;
+        int charsRead = 0;
 
-        // Ler as coordenadas normalizadas do arquivo
-        sscanf(vertexData, "%f %f", &x_normalized, &y_normalized);
+        // Ler as coordenadas normalizadas do arquivo e contar quantos
+        // caracteres foram lidos
+        sscanf(vertexData, "%f %f%n", &x_normalized, &y_normalized, &charsRead);
 
         // Desnormalizar as coordenadas para o sistema de coordenadas da janela
-        newPolygonNode->polygon.vertices[i][0] = x_normalized * 400.0f;
-        newPolygonNode->polygon.vertices[i][1] = y_normalized * 300.0f;
+        newPolygonNode->polygon.vertices[i][0] =
+            x_normalized * 400.0f; // Aplicar fator de escala
+        newPolygonNode->polygon.vertices[i][1] =
+            y_normalized * 300.0f; // Aplicar fator de escala
 
-        // Avançar para o próximo par de vértices
-        vertexData =
-            strchr(vertexData, ' ') + 1;  // Move para o próximo vértice
-        vertexData = strchr(vertexData, ' ') + 1;
+        printf("[DEBUG] Li coordenadas (x: %.2f, y: %.2f) do vértice %d do "
+               "polígono\n",
+               x_normalized, y_normalized, i);
+
+        // Avançar no vertexData com base no número de caracteres lidos
+        vertexData += charsRead;
       }
 
       // Carregar a transformação
@@ -1492,12 +1539,13 @@ void loadFromFile(const char* filename) {
   }
 
   fclose(file);
+  resetProjection();
+  recalculateAllTransformations();
   glutPostRedisplay();
-
-  GLenum err;
-  while ((err = glGetError()) != GL_NO_ERROR) {
-    printf("OpenGL error: %d\n", err);
-  }
+  // GLenum err;
+  // while ((err = glGetError()) != GL_NO_ERROR) {
+  //   printf("OpenGL error: %d\n", err);
+  // }
 }
 
 void printInitialInfo() {
@@ -1531,14 +1579,12 @@ void printInitialInfo() {
   printf("\n");
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
   glutInitWindowSize(windowWidth, windowHeight);
   glutInitWindowPosition(100, 100);
   glutCreateWindow("Guache - 2D Painter");
-
-  init();
 
   if (argc > 1) {
     if (strcmp(argv[1], "save") == 0 && argc == 3) {
@@ -1562,17 +1608,21 @@ int main(int argc, char* argv[]) {
     shouldSave = 1;
   }
 
+  init();
+
   printInitialInfo();
   glutDisplayFunc(display);
+  // TODO: Ver se precisa chamar
+  glutPostRedisplay();
+  glutPostRedisplay();
+  glutPostRedisplay();
+  // Aqui para que saia daquela primeira tela onde o objeto aparece grande
+
+  // glutIdleFunc(glutPostRedisplay);
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutPassiveMotionFunc(mouseMoveCallback);
   glutMotionFunc(clickedMouseCallback);
-
-  if (shouldLoad) {
-    loadFromFile(saveFile);
-  }
-
   glutMainLoop();
 
   return EXIT_SUCCESS;
