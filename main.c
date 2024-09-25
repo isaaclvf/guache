@@ -682,6 +682,7 @@ void renderAllPolygons() {
   PolygonNode* current = polygonList.head;
 
   while (current != NULL) {
+    glPushMatrix();
     glColor3f(current->polygon.color[0], current->polygon.color[1],
               current->polygon.color[2]);
 
@@ -694,16 +695,20 @@ void renderAllPolygons() {
     }
 
     glEnd();
+    glPopMatrix();
     current = current->next;
   }
 
   if (isDrawingPolygon && tempPolygon.vertexCount > 0) {
+
+    glPushMatrix();
     glColor3f(tempPolygon.color[0], tempPolygon.color[1], tempPolygon.color[2]);
     glBegin(GL_LINE_LOOP);
     for (int i = 0; i < tempPolygon.vertexCount; i++) {
       glVertex2f(tempPolygon.vertices[i][0], tempPolygon.vertices[i][1]);
     }
     glEnd();
+    glPopMatrix();
   }
 }
 
@@ -1001,9 +1006,11 @@ void onMouseClick(int button, int state, int x, int y) {
       if (tempPolygon.vertexCount < MAX_VERTICES) {
         if (isCloseToFirstPoint(worldX, worldY) &&
             tempPolygon.vertexCount > 2) {
+              glPushMatrix();
           addPolygon(tempPolygon.vertices, tempPolygon.vertexCount,
                      currentColor[0], currentColor[1], currentColor[2]);
           isDrawingPolygon = 0;
+          glPopMatrix();
         } else {
           // Adiciona vértice ao polígono
           tempPolygon.vertices[tempPolygon.vertexCount][0] = worldX;
@@ -1139,6 +1146,7 @@ void keyPress(unsigned char key, int x, int y) {
   if (selectedPoint) {
     switch (key) {
       case 'q':
+      glPushMatrix();
         selectedPoint->point.transformation.angle += 5.0f;
         break;
       case 'e':
@@ -1284,7 +1292,10 @@ void keyPress(unsigned char key, int x, int y) {
             !selectedPolygon->polygon.transformation.reflectY;
         break;
     }
+
+    glPushMatrix();
     updatePolygonTransformationMatrix(selectedPolygon);
+    glPopMatrix();
   }
 
   if (currentMode == DRAW_POINT || currentMode == SELECT || currentMode == DRAW_LINE) {
