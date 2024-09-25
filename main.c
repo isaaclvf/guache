@@ -372,6 +372,7 @@ void debugPolygon(PolygonNode *polygonNode) {
   printf("\n");
 }
 
+// Função auxiliar para debug
 void verifyLoadedObjects() {
   PointNode *currentPoint = pointList.head;
   while (currentPoint) {
@@ -665,6 +666,7 @@ void renderAllLines() {
 
   while (current != NULL) {
     glLoadMatrixf(current->line.transformation.matrix);
+    glLineWidth(3.0f);
     glBegin(GL_LINES);
 
     glColor3f(current->line.color[0], current->line.color[1],
@@ -932,7 +934,6 @@ void init() {
   gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f);
 
   if (shouldLoad) {
-    printf("[DEBUG] Cheguei aqui\n");
     loadFromFile(saveFile);
     shouldLoad = 0; // Carrega apenas uma vez
   }
@@ -965,7 +966,6 @@ void display() {
   }
 
   glutSwapBuffers();
-  verifyLoadedObjects();
 }
 
 // Usado para fechar o polígono
@@ -1054,12 +1054,104 @@ void mouseMoveCallback(int x, int y) {
   }
 }
 
-void clickedMouseCallback() {}
-
 void saveToFile(const char *filename);
 
-void keyPress(unsigned char key, int x, int y) {
+void updateCurrentColor(unsigned char key) {
+  switch (key) {
+  case '1':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 0.0f;
+    printf("%s%sPreto%s\n", BLKB, UWHT, CRESET);
+    break;
+  case '2':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 0.0f;
+    printf("%s%sVermelho%s\n", REDB, UWHT, CRESET);
+    break;
+  case '3':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 0.0f;
+    printf("%s%sVerde%s\n", GRNB, UWHT, CRESET);
+    break;
+  case '4':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 1.0f;
+    printf("%s%sAzul%s\n", BLUB, UWHT, CRESET);
+    break;
+  case '5':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 0.0f;
+    printf("%s%sAmarelo%s\n", YELB, UWHT, CRESET);
+    break;
+  case '6':
+    currentColor[0] = 1.0f;
+    currentColor[1] = 0.0f;
+    currentColor[2] = 1.0f;
+    printf("%s%sMagenta%s\n", MAGB, UWHT, CRESET);
+    break;
+  case '7':
+    currentColor[0] = 0.0f;
+    currentColor[1] = 1.0f;
+    currentColor[2] = 1.0f;
+    printf("%s%sCiano%s\n", CYNB, UWHT, CRESET);
+    break;
+  }
+}
 
+void updateTransformation(Transformation *transformation, unsigned char key) {
+  switch (key) {
+  case 'q':
+    glPushMatrix();
+    transformation->angle += 5.0f;
+    break;
+  case 'e':
+    transformation->angle -= 5.0f;
+    break;
+  case 'w':
+    transformation->ty += 5.0f;
+    break;
+  case 's':
+    transformation->ty -= 5.0f;
+    break;
+  case 'a':
+    transformation->tx -= 5.0f;
+    break;
+  case 'd':
+    transformation->tx += 5.0f;
+    break;
+  case '+':
+    transformation->scale += 0.1f;
+    break;
+  case '-':
+    transformation->scale -= 0.1f;
+    break;
+  case 'i':
+    transformation->shearX += 0.05f;
+    break;
+  case 'k':
+    transformation->shearX -= 0.05f;
+    break;
+  case 'j':
+    transformation->shearY += 0.05f;
+    break;
+  case 'l':
+    transformation->shearY -= 0.05f;
+    break;
+  case 'x':
+    transformation->reflectX = !transformation->reflectX;
+    break;
+  case 'y':
+    transformation->reflectY = !transformation->reflectY;
+    break;
+  }
+}
+
+void keyPress(unsigned char key, int x, int y) {
   if (key == '.' && shouldSave) {
     if (strlen(saveFile) > 0) {
       saveToFile(saveFile);
@@ -1072,21 +1164,21 @@ void keyPress(unsigned char key, int x, int y) {
   } else if (key == 'v') {
     clearSelection();
     currentMode = DRAW_POINT;
-    printf("Modo de desenho de \e[1;32mponto\e[0m selecionado.\n");
+    printf("Desenho de \e[1;32mponto\e[0m selecionado.\n");
 
   } else if (key == 'b') {
     clearSelection();
     currentMode = DRAW_LINE;
-    printf("Modo de desenho de \e[1;32mlinha\e[0m selecionado.\n");
+    printf("Desenho de \e[1;32mlinha\e[0m selecionado.\n");
 
   } else if (key == 'n') {
     clearSelection();
     currentMode = DRAW_POLYGON;
-    printf("Modo de desenho de \e[1;32mpolígono\e[0m selecionado.\n");
+    printf("Desenho de \e[1;32mpolígono\e[0m selecionado.\n");
 
   } else if (key == 'm') {
     currentMode = SELECT;
-    printf("Modo de \e[1;32mseleção\e[0m ativo.\n");
+    printf("Modo de \e[1;32mseleção\e[0m selecionado.\n");
 
   } else if (key == '0') {
     if (selectedPoint) {
@@ -1105,194 +1197,20 @@ void keyPress(unsigned char key, int x, int y) {
     }
   }
 
-  switch (key) {
-  case '1':
-    currentColor[0] = 0.0f;
-    currentColor[1] = 0.0f;
-    currentColor[2] = 0.0f;
-    break;
-  case '2':
-    currentColor[0] = 1.0f;
-    currentColor[1] = 0.0f;
-    currentColor[2] = 0.0f;
-    break;
-  case '3':
-    currentColor[0] = 0.0f;
-    currentColor[1] = 1.0f;
-    currentColor[2] = 0.0f;
-    break;
-  case '4':
-    currentColor[0] = 0.0f;
-    currentColor[1] = 0.0f;
-    currentColor[2] = 1.0f;
-    break;
-  case '5':
-    currentColor[0] = 1.0f;
-    currentColor[1] = 1.0f;
-    currentColor[2] = 0.0f;
-    break;
-  case '6':
-    currentColor[0] = 1.0f;
-    currentColor[1] = 0.0f;
-    currentColor[2] = 1.0f;
-    break;
-  case '7':
-    currentColor[0] = 0.0f;
-    currentColor[1] = 1.0f;
-    currentColor[2] = 1.0f;
-    break;
-  }
+  updateCurrentColor(key);
 
   if (selectedPoint) {
-    switch (key) {
-    case 'q':
-      glPushMatrix();
-      selectedPoint->point.transformation.angle += 5.0f;
-      break;
-    case 'e':
-      selectedPoint->point.transformation.angle -= 5.0f;
-      break;
-    case 'w':
-      selectedPoint->point.transformation.ty += 5.0f;
-      break;
-    case 's':
-      selectedPoint->point.transformation.ty -= 5.0f;
-      break;
-    case 'a':
-      selectedPoint->point.transformation.tx -= 5.0f;
-      break;
-    case 'd':
-      selectedPoint->point.transformation.tx += 5.0f;
-      break;
-    case '+':
-      selectedPoint->point.transformation.scale += 0.1f;
-      break;
-    case '-':
-      selectedPoint->point.transformation.scale -= 0.1f;
-      break;
-    case 'i':
-      selectedPoint->point.transformation.shearX += 0.05f;
-      break;
-    case 'k':
-      selectedPoint->point.transformation.shearX -= 0.05f;
-      break;
-    case 'j':
-      selectedPoint->point.transformation.shearY += 0.05f;
-      break;
-    case 'l':
-      selectedPoint->point.transformation.shearY -= 0.05f;
-      break;
-    case 'x':
-      selectedPoint->point.transformation.reflectX =
-          !selectedPoint->point.transformation.reflectX;
-      break;
-    case 'y':
-      selectedPoint->point.transformation.reflectY =
-          !selectedPoint->point.transformation.reflectY;
-      break;
-    }
-
+    updateTransformation(&selectedPoint->point.transformation, key);
     updatePointTransformationMatrix(selectedPoint);
   }
 
   if (selectedLine) {
-    switch (key) {
-    case 'q':
-      selectedLine->line.transformation.angle += 5.0f;
-      break;
-    case 'e':
-      selectedLine->line.transformation.angle -= 5.0f;
-      break;
-    case 'w':
-      selectedLine->line.transformation.ty += 5.0f;
-      break;
-    case 's':
-      selectedLine->line.transformation.ty -= 5.0f;
-      break;
-    case 'a':
-      selectedLine->line.transformation.tx -= 5.0f;
-      break;
-    case 'd':
-      selectedLine->line.transformation.tx += 5.0f;
-      break;
-    case '+':
-      selectedLine->line.transformation.scale += 0.1f;
-      break;
-    case '-':
-      selectedLine->line.transformation.scale -= 0.1f;
-      break;
-    case 'i':
-      selectedLine->line.transformation.shearX += 0.05f;
-      break;
-    case 'k':
-      selectedLine->line.transformation.shearX -= 0.05f;
-      break;
-    case 'j':
-      selectedLine->line.transformation.shearY += 0.05f;
-      break;
-    case 'l':
-      selectedLine->line.transformation.shearY -= 0.05f;
-      break;
-    case 'x':
-      selectedLine->line.transformation.reflectX =
-          !selectedLine->line.transformation.reflectX;
-      break;
-    case 'y':
-      selectedLine->line.transformation.reflectY =
-          !selectedLine->line.transformation.reflectY;
-      break;
-    }
+    updateTransformation(&selectedLine->line.transformation, key);
     updateLineTransformationMatrix(selectedLine);
   }
 
   if (selectedPolygon) {
-    switch (key) {
-    case 'q':
-      selectedPolygon->polygon.transformation.angle += 5.0f;
-      break;
-    case 'e':
-      selectedPolygon->polygon.transformation.angle -= 5.0f;
-      break;
-    case 'w':
-      selectedPolygon->polygon.transformation.ty += 5.0f;
-      break;
-    case 's':
-      selectedPolygon->polygon.transformation.ty -= 5.0f;
-      break;
-    case 'a':
-      selectedPolygon->polygon.transformation.tx -= 5.0f;
-      break;
-    case 'd':
-      selectedPolygon->polygon.transformation.tx += 5.0f;
-      break;
-    case '+':
-      selectedPolygon->polygon.transformation.scale += 0.1f;
-      break;
-    case '-':
-      selectedPolygon->polygon.transformation.scale -= 0.1f;
-      break;
-    case 'i':
-      selectedPolygon->polygon.transformation.shearX += 0.05f;
-      break;
-    case 'k':
-      selectedPolygon->polygon.transformation.shearX -= 0.05f;
-      break;
-    case 'j':
-      selectedPolygon->polygon.transformation.shearY += 0.05f;
-      break;
-    case 'l':
-      selectedPolygon->polygon.transformation.shearY -= 0.05f;
-      break;
-    case 'x':
-      selectedPolygon->polygon.transformation.reflectX =
-          !selectedPolygon->polygon.transformation.reflectX;
-      break;
-    case 'y':
-      selectedPolygon->polygon.transformation.reflectY =
-          !selectedPolygon->polygon.transformation.reflectY;
-      break;
-    }
-
+    updateTransformation(&selectedPolygon->polygon.transformation, key);
     glPushMatrix();
     updatePolygonTransformationMatrix(selectedPolygon);
     glPopMatrix();
@@ -1443,10 +1361,10 @@ void recalculateAllTransformations() {
 }
 
 void resetProjection() {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f); // Sua área de visualização
-    glMatrixMode(GL_MODELVIEW);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluOrtho2D(-400.0f, 400.0f, -300.0f, 300.0f);
+  glMatrixMode(GL_MODELVIEW);
 }
 
 void loadFromFile(const char *filename) {
@@ -1456,7 +1374,7 @@ void loadFromFile(const char *filename) {
     return;
   }
 
-  char line[512]; // Aumentei o tamanho do buffer para lidar com linhas maiores
+  char line[512];
   while (fgets(line, sizeof(line), file)) {
     if (strncmp(line, "point", 5) == 0) {
       PointNode *newPointNode = (PointNode *)malloc(sizeof(PointNode));
@@ -1511,8 +1429,6 @@ void loadFromFile(const char *filename) {
         float x_normalized, y_normalized;
         int charsRead = 0;
 
-        // Ler as coordenadas normalizadas do arquivo e contar quantos
-        // caracteres foram lidos
         sscanf(vertexData, "%f %f%n", &x_normalized, &y_normalized, &charsRead);
 
         // Desnormalizar as coordenadas para o sistema de coordenadas da janela
@@ -1520,10 +1436,6 @@ void loadFromFile(const char *filename) {
             x_normalized * 400.0f; // Aplicar fator de escala
         newPolygonNode->polygon.vertices[i][1] =
             y_normalized * 300.0f; // Aplicar fator de escala
-
-        printf("[DEBUG] Li coordenadas (x: %.2f, y: %.2f) do vértice %d do "
-               "polígono\n",
-               x_normalized, y_normalized, i);
 
         // Avançar no vertexData com base no número de caracteres lidos
         vertexData += charsRead;
@@ -1542,10 +1454,6 @@ void loadFromFile(const char *filename) {
   resetProjection();
   recalculateAllTransformations();
   glutPostRedisplay();
-  // GLenum err;
-  // while ((err = glGetError()) != GL_NO_ERROR) {
-  //   printf("OpenGL error: %d\n", err);
-  // }
 }
 
 void printInitialInfo() {
@@ -1560,22 +1468,23 @@ void printInitialInfo() {
   printf("%s%s  7  %s", CYNB, UWHT, CRESET);
   printf("\n\n");
 
-  printf("v      -> Point\n");
-  printf("b      -> Line\n");
-  printf("n      -> Polygon\n");
-  printf("m      -> Select\n");
+  printf("v      -> Ponto\n");
+  printf("b      -> Linha\n");
+  printf("n      -> Polígono\n");
+  printf("m      -> Seleção\n");
+  printf("0      -> Remover objeto selecionado\n");
   printf("\n");
 
   printf("  w  \n");
-  printf("a s d  -> Translate\n");
-  printf("q e    -> Rotate\n");
-  printf("- +    -> Scale\n");
+  printf("a s d  -> Translação\n");
+  printf("q e    -> Rotatação\n");
+  printf("- +    -> Escala\n");
   printf("  i  \n");
-  printf("j k l  -> Shear\n");
-  printf("x y    -> Reflect\n");
+  printf("j k l  -> Cisalhamento\n");
+  printf("x y    -> Reflexão\n");
   printf("\n");
 
-  printf(".      -> Save at %s\n", saveFile);
+  printf(".      -> Salvar em %s\n", saveFile);
   printf("\n");
 }
 
@@ -1612,17 +1521,10 @@ int main(int argc, char *argv[]) {
 
   printInitialInfo();
   glutDisplayFunc(display);
-  // TODO: Ver se precisa chamar
-  glutPostRedisplay();
-  glutPostRedisplay();
-  glutPostRedisplay();
-  // Aqui para que saia daquela primeira tela onde o objeto aparece grande
 
-  // glutIdleFunc(glutPostRedisplay);
   glutKeyboardFunc(keyPress);
   glutMouseFunc(onMouseClick);
   glutPassiveMotionFunc(mouseMoveCallback);
-  glutMotionFunc(clickedMouseCallback);
   glutMainLoop();
 
   return EXIT_SUCCESS;
