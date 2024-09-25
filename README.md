@@ -50,22 +50,21 @@ Para começar a usar o Guache, siga os seguintes passos:
 - **Selecionar Objeto**: Pressione `m`
 - **Remover Objeto Selecionado**: Pressione `0`
 - **Rotacionar Polígono Selecionado**: Pressione `z`
+- **Mudar Cor**:
+   - `1` - Preto
+   - `2` - Vermelho
+   - `3` - Verde
+   - `4` - Azul
+   - `5` - Amarelo
+   - `6` - Magenta
+   - `7` - Ciano
 
-### Mudar Cor:
-- `1` - Preto
-- `2` - Vermelho
-- `3` - Verde
-- `4` - Azul
-- `5` - Amarelo
-- `6` - Magenta
-- `7` - Ciano
-
-### Transformações:
-- **Mover**: `a` (esquerda), `s` (baixo), `d` (direita), `w` (cima)
-- **Rotacionar**: `q` (direita), `e` (esquerda)
-- **Escalar**: `+` (aumentar), `-` (diminuir)
-- **Cisalhar**: `i` (direita), `j` (cima), `k` (esquerda), `l` (baixo)
-- **Refletir**: `x` (eixo x), `y` (eixo y)
+- **Transformações**:
+   - **Mover**: `a` (esquerda), `s` (baixo), `d` (direita), `w` (cima)
+   - **Rotacionar**: `q` (direita), `e` (esquerda)
+   - **Escalar**: `+` (aumentar), `-` (diminuir)
+   - **Cisalhar**: `i` (direita), `j` (cima), `k` (esquerda), `l` (baixo)
+   - **Refletir**: `x` (eixo x), `y` (eixo y)
 
 ### Exemplo de Uso 💡
 
