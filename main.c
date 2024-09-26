@@ -1092,6 +1092,7 @@ void mouseDragCallback(int x, int y) {
     float dx = mouseX - dragStartX;
     float dy = mouseY - dragStartY;
 
+    glPushMatrix();
     if (selectedPoint) {
       selectedPoint->point.transformation.tx += dx;
       selectedPoint->point.transformation.ty += dy;
@@ -1105,6 +1106,7 @@ void mouseDragCallback(int x, int y) {
       selectedPolygon->polygon.transformation.ty += dy;
       updatePolygonTransformationMatrix(selectedPolygon);
     }
+    glPopMatrix();
 
     dragStartX = mouseX;
     dragStartY = mouseY;
