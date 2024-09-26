@@ -1093,18 +1093,17 @@ void mouseDragCallback(int x, int y) {
     float dy = mouseY - dragStartY;
 
     if (selectedPoint) {
-      selectedPoint->point.x += dx;
-      selectedPoint->point.y += dy;
+      selectedPoint->point.transformation.tx += dx;
+      selectedPoint->point.transformation.ty += dy;
+      updatePointTransformationMatrix(selectedPoint);
     } else if (selectedLine) {
-      selectedLine->line.x0 += dx;
-      selectedLine->line.y0 += dy;
-      selectedLine->line.x1 += dx;
-      selectedLine->line.y1 += dy;
+      selectedLine->line.transformation.tx += dx;
+      selectedLine->line.transformation.ty += dy;
+      updateLineTransformationMatrix(selectedLine);
     } else if (selectedPolygon) {
-      for (int i = 0; i < selectedPolygon->polygon.vertexCount; i++) {
-        selectedPolygon->polygon.vertices[i][0] += dx;
-        selectedPolygon->polygon.vertices[i][1] += dy;
-      }
+      selectedPolygon->polygon.transformation.tx += dx;
+      selectedPolygon->polygon.transformation.ty += dy;
+      updatePolygonTransformationMatrix(selectedPolygon);
     }
 
     dragStartX = mouseX;
